@@ -5,23 +5,27 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7d1f4050-8ee0-441b-9e2e-f0c28acd7438" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/backend/internal/app/app.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/internal/app/logging.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/internal/app/module_dev.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/internal/app/module_prod.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/internal/pkg/api/error.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/internal/pkg/api/module.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/internal/pkg/api/tribute.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/internal/pkg/tribute/module.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/cmd/ravens-club/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/backend/cmd/ravens-club/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/backend/go.mod" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/internal/pkg/http/module.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/internal/app/app.go" beforeDir="false" afterPath="$PROJECT_DIR$/backend/internal/app/app.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/internal/app/logging.go" beforeDir="false" afterPath="$PROJECT_DIR$/backend/internal/app/logging.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/internal/app/module_dev.go" beforeDir="false" afterPath="$PROJECT_DIR$/backend/internal/app/module_dev.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/internal/app/module_prod.go" beforeDir="false" afterPath="$PROJECT_DIR$/backend/internal/app/module_prod.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/internal/pkg/api/tribute.go" beforeDir="false" afterPath="$PROJECT_DIR$/backend/internal/pkg/api/tribute.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="GOROOT" url="file://$PROJECT_DIR$/../../../../Program Files/Go" />
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Go File" />
+      </list>
+    </option>
+  </component>
+  <component name="GOROOT" url="file://C:/Program Files/Go" />
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
@@ -36,6 +40,8 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "DefaultGoTemplateProperty": "Go File",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.go.formatter.settings.were.checked": "true",
     "RunOnceActivity.go.migrated.go.modules.settings": "true",
@@ -43,7 +49,10 @@
     "git-widget-placeholder": "master",
     "go.import.settings.migrated": "true",
     "go.sdk.automatically.set": "true",
-    "last_opened_file_path": "C:/Users/kheritage/Dev/ravens-club",
+    "ignore.virus.scanning.warn.message": "true",
+    "last_opened_file_path": "D:/Dev/ravens-club",
+    "node.js.detected.package.eslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
     "nodejs_package_manager_path": "npm"
   }
 }]]></component>
@@ -79,6 +88,17 @@
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="VgoProject">
     <settings-migrated>true</settings-migrated>
