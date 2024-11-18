@@ -4,22 +4,26 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7d1f4050-8ee0-441b-9e2e-f0c28acd7438" name="Changes" comment="Http Server built &amp; working">
+    <list default="true" id="7d1f4050-8ee0-441b-9e2e-f0c28acd7438" name="Changes" comment="icon and client commit">
+      <change afterPath="$PROJECT_DIR$/client/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client/.npmrc" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client/.prettierignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client/.prettierrc" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client/eslint.config.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client/package-lock.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client/package.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client/src/app.d.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client/src/app.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client/src/lib/index.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client/src/routes/+page.svelte" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client/static/favicon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client/svelte.config.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client/tsconfig.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client/vite.config.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/.idea/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/server/.idea/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/.idea/backend.iml" beforeDir="false" afterPath="$PROJECT_DIR$/server/.idea/backend.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/server/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/server/.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/cmd/ravens-club/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/cmd/ravens-club/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/internal/app/app.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/internal/app/app.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/internal/app/logging.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/internal/app/logging.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/internal/app/module_dev.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/internal/app/module_dev.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/internal/app/module_prod.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/internal/app/module_prod.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/internal/pkg/api/error.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/internal/pkg/api/error.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/internal/pkg/api/module.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/internal/pkg/api/module.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/internal/pkg/api/tribute.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/internal/pkg/api/tribute.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/internal/pkg/http/module.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/internal/pkg/http/module.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/internal/pkg/tribute/module.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/internal/pkg/tribute/module.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/server/go.sum" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -43,12 +47,12 @@
     &quot;assignee&quot;: &quot;kh14762&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/kh14762/ravens-club.git",
-    "accountId": "80fb4d12-849b-4a58-b697-4b8fa7ba84bb"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/kh14762/ravens-club.git&quot;,
+    &quot;accountId&quot;: &quot;09b88747-fa37-4b5b-891a-4f8062908916&quot;
   }
-}]]></component>
+}</component>
   <component name="ProjectColorInfo">{
   &quot;customColor&quot;: &quot;&quot;,
   &quot;associatedIndex&quot;: 1
@@ -77,6 +81,7 @@
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
+    "ts.external.directory.path": "D:\\Dev\\ravens-club\\client\\node_modules\\typescript\\lib",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -104,7 +109,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-e768b9ed790e-JavaScript-WS-243.21565.180" />
+        <option value="bundled-gosdk-5df93f7ad4aa-df9ad98b711f-org.jetbrains.plugins.go.sharedIndexes.bundled-GO-242.23339.24" />
+        <option value="bundled-js-predefined-d6986cc7102b-5c90d61e3bab-JavaScript-GO-242.23339.24" />
       </set>
     </attachedChunks>
   </component>
@@ -128,7 +134,19 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State />
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="origin/master" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
           </value>
         </entry>
       </map>
@@ -136,7 +154,8 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Http Server built &amp; working" />
-    <option name="LAST_COMMIT_MESSAGE" value="Http Server built &amp; working" />
+    <MESSAGE value="icon and client commit" />
+    <option name="LAST_COMMIT_MESSAGE" value="icon and client commit" />
   </component>
   <component name="VgoProject">
     <settings-migrated>true</settings-migrated>
