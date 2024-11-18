@@ -17,8 +17,8 @@ func initTributeController(engine *gin.Engine, ts tribute.TributeService) {
 	})
 
 	engine.GET("/api/tribute", func(c *gin.Context) {
-		//tributeList := ts.List()
-		c.JSON(http.StatusOK, gin.H{"tributes": "hello"})
+		tributeList := ts.List()
+		c.JSON(http.StatusOK, gin.H{"tributes": tributeList})
 	})
 
 	engine.GET("/api/tribute/:id", func(c *gin.Context) {
