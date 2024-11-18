@@ -4,9 +4,9 @@ package app
 
 import (
 	"go.uber.org/fx"
-	"ravens-club/internal/pkg/api"
-	"ravens-club/internal/pkg/http"
-	"ravens-club/internal/pkg/tribute"
+	"raven-club/internal/pkg/api"
+	"raven-club/internal/pkg/http"
+	"raven-club/internal/pkg/tribute"
 )
 
 var Module = fx.Module("app",

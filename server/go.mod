@@ -1,4 +1,4 @@
-module ravens-club
+module raven-club
 
 go 1.23.3
 

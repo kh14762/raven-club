@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
 	"net/http"
-	"ravens-club/internal/pkg/tribute"
+	"raven-club/internal/pkg/tribute"
 	"strconv"
 )
 

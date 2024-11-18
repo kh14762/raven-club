@@ -1,6 +1,6 @@
 package main
 
-import "ravens-club/internal/app"
+import "raven-club/internal/app"
 
 func main() {
 	app.Launch()
