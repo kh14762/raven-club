@@ -5,5 +5,5 @@ import (
 )
 
 var Module = fx.Module("api",
-	TributeControllerModule,
+	TributeController,
 )

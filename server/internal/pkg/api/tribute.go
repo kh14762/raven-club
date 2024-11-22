@@ -9,9 +9,9 @@ import (
 	"strconv"
 )
 
-var TributeControllerModule = fx.Module("tribute-controller", fx.Invoke(initTributeController))
+var TributeController = fx.Module("TributeController", fx.Invoke(InitTributeController))
 
-func initTributeController(engine *gin.Engine, ts tribute.TributeService) {
+func InitTributeController(engine *gin.Engine, ts tribute.TributeService) {
 	engine.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "pong"})
 	})
