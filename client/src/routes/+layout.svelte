@@ -9,7 +9,7 @@
     }
 </script>
 
-<header class="bg-white dark:bg-gray-800 shadow-sm dark:shadow-gray-700">
+<header class="bg-white dark:bg-gray-800 shadow-sm dark:shadow-gray-700 transition-colors duration-300">
     <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <!-- Left side - Logo/Brand -->
@@ -107,6 +107,7 @@
                     >
                         Register
                     </a>
+                    <ThemeToggle/>
                 </div>
             </div>
         {/if}
