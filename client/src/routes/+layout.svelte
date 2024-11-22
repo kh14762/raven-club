@@ -1,5 +1,6 @@
 <script lang="ts">
     import '../styles/app.css'
+    import ThemeToggle from "$lib/ThemeToggle.svelte";
 
     let isMenuOpen = false;
 
@@ -8,7 +9,7 @@
     }
 </script>
 
-<header class="bg-white shadow-sm">
+<header class="bg-white dark:bg-gray-800 shadow-sm dark:shadow-gray-700">
     <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <!-- Left side - Logo/Brand -->
@@ -22,24 +23,30 @@
             <div class="hidden sm:flex sm:items-center sm:space-x-4">
                 <a
                         href="/login"
-                        class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                        class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-200
+                               hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                     Login
                 </a>
                 <a
                         href="/register"
-                        class="px-3 py-2 rounded-md text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700"
+                        class="px-3 py-2 rounded-md text-sm font-medium bg-indigo-600 text-white
+                               hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
                 >
                     Register
                 </a>
+                <ThemeToggle/>
             </div>
 
             <!-- Mobile menu button -->
             <div class="flex items-center sm:hidden">
                 <button
                         type="button"
-                        class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
                         aria-controls="mobile-menu"
+                        class="inline-flex items-center justify-center p-2 rounded-md
+                               text-gray-400 dark:text-gray-300
+                               hover:text-gray-500 dark:hover:text-gray-100
+                               hover:bg-gray-100 dark:hover:bg-gray-700"
                         aria-expanded="false"
                         on:click={toggleMenu}
                 >
@@ -89,13 +96,14 @@
                 <div class="pt-2 pb-3 space-y-1">
                     <a
                             href="/login"
-                            class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                            class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-200
+                                   hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
                     >
                         Login
                     </a>
                     <a
                             href="/register"
-                            class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                            class="btn-primary"
                     >
                         Register
                     </a>
@@ -104,5 +112,4 @@
         {/if}
     </nav>
 </header>
-
 <slot />

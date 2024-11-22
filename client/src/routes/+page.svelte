@@ -6,6 +6,7 @@
     import darkStars from '$lib/icons/dark-stars-thirteen.png'
     import lightStars from '$lib/icons/light-stars-thirteen.png'
     import darkRavenIcon from '$lib/icons/raven-dark.png';
+    import lightRavenIcon from '$lib/icons/raven-light.png'
 
     let rotationSpeed = 3000; // Default speed (3 seconds per rotation)
     let isRotating = true;
@@ -63,7 +64,7 @@
     });
 </script>
 
-<div class="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+<div class="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
     <div class="relative">
         <!-- Stationary base image -->
         <img
@@ -79,7 +80,6 @@
                 style="animation: spin 15s linear infinite;"
         />
     </div>
-
 </div>
 
 <style>
