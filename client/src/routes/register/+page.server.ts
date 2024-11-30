@@ -7,7 +7,7 @@ const userSchema = z.object({
     email: z.string().email('Invalid email address'),
     password: z.string().min(1, 'Password must be at least 1 characters long'),
     confirmPassword: z.string().min(1, 'Confirm password must be at least 1 characters long'),
-}).refine((data) => data.password === data.confirmPassword, {
+}).refine((data) => data.password !== data.confirmPassword, {
     message: "Passwords must match",
     path: ["confirmPassword"], // path of error
 })
@@ -15,7 +15,8 @@ const userSchema = z.object({
 export const actions: Actions = {
     register: async ({request}) => {
         const data = await request.formData();
-        const formEntries = Object.fromEntries(data)
+        console.log(data)
+        let formEntries = Object.fromEntries(data)
 
         try {
             const {username, email, password, confirmPassword} = userSchema.parse(formEntries)
@@ -41,7 +42,6 @@ export const actions: Actions = {
 
             // return any errors
         } catch (error: unknown) {
-            console.log(error)
             if (error instanceof ZodError) {
                 const errors = error.flatten()
                 const { username, email, password, confirmPassword } = formEntries
@@ -55,7 +55,7 @@ export const actions: Actions = {
                         ...(fieldErrors?.username ? { field : 'username', message: fieldErrors.username[0]} : {}),
                         ...(fieldErrors?.email ? { field : 'email', message: fieldErrors.email[0]} : {}),
                         ...(fieldErrors?.password ? { field : 'password', message: fieldErrors.password[0]} : {}),
-                        ...(fieldErrors?.confirmPassword ? { field : 'confirmPassword', message: fieldErrors.confirmPassword[0]} : {})
+                        ...(fieldErrors?.confirmPassword ? { field : 'confirm', message: fieldErrors.confirmPassword[0]} : {})
                     }
                 })
             }

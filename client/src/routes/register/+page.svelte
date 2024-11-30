@@ -69,8 +69,8 @@
                 <div>
                     <label for="confirm-password" class="sr-only">Confirm Password</label>
                     <input
-                            id="confirm-password"
-                            name="confirm-password"
+                            id="confirmPassword"
+                            name="confirmPassword"
                             type="password"
                             value={confirmPassword}
                             required
