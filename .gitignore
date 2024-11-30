@@ -21,8 +21,8 @@
 go.work
 go.work.sum
 
-# env file
-.env
+# .env file
+client/.env
 
 node_modules
 
@@ -37,9 +37,9 @@ node_modules
 Thumbs.db
 
 # Env
-.env.*
-!.env.example
-!.env.test
+/client/.env.*
+/client/!.env.example
+/client/!.env.test
 
 # Vite
 vite.config.js.timestamp-*

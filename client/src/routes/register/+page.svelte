@@ -1,35 +1,16 @@
 <script lang="ts">
-    let username = '';
-    let email = '';
-    let password = '';
-    let confirmPassword = '';
-    let isLoading = false;
-    let errorMessage = '';
+    import type { ActionData } from './$types'
+    export let form: ActionData;
 
-    async function handleRegister(event: SubmitEvent) {
-        event.preventDefault();
-        errorMessage = '';
-
-        // Basic validation
-        if (password !== confirmPassword) {
-            errorMessage = 'Passwords do not match';
-            return;
-        }
-
-        isLoading = true;
-        try {
-            // Add your registration logic here
-            console.log('Register attempt:', { username, email, password });
-
-            // After successful registration, you might want to redirect
-            // await goto('/login');
-        } catch (error) {
-            console.error('Registration failed:', error);
-            errorMessage = 'Registration failed. Please try again.';
-        } finally {
-            isLoading = false;
-        }
-    }
+    let {username, email, password, confirmPassword} = form ?? {};
+    $: ({username, email, password, confirmPassword} = form ?? {
+        username: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        error: { field: '', message: ''}
+    });
+    let isLoading = false; // TODO: implement loading animation
 </script>
 
 <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
@@ -40,13 +21,7 @@
             </h2>
         </div>
 
-        {#if errorMessage}
-            <div class="bg-red-50 text-red-500 p-3 rounded-md text-sm">
-                {errorMessage}
-            </div>
-        {/if}
-
-        <form class="mt-8 space-y-6" on:submit={handleRegister}>
+        <form class="mt-8 space-y-6" method="POST" action="?/register">
             <div class="rounded-md shadow-sm space-y-4">
                 <!-- Username field -->
                 <div>
@@ -55,7 +30,7 @@
                             id="username"
                             name="username"
                             type="text"
-                            bind:value={username}
+                            value={username}
                             required
                             class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                             placeholder="Username"
@@ -69,7 +44,7 @@
                             id="email"
                             name="email"
                             type="email"
-                            bind:value={email}
+                            value={email}
                             required
                             class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                             placeholder="Email address"
@@ -83,7 +58,7 @@
                             id="password"
                             name="password"
                             type="password"
-                            bind:value={password}
+                            value={password}
                             required
                             class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                             placeholder="Password"
@@ -97,7 +72,7 @@
                             id="confirm-password"
                             name="confirm-password"
                             type="password"
-                            bind:value={confirmPassword}
+                            value={confirmPassword}
                             required
                             class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                             placeholder="Confirm Password"

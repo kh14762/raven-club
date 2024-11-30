@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
 	"net/http"
@@ -34,25 +35,38 @@ func InitProtectedRoutes(engine *gin.Engine, as auth.Service, am *auth.Middlewar
 func handleRegister(as auth.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Your registration logic
+		username, _ := c.Get("username")
+		email, _ := c.Get("email")
+		password, _ := c.Get("password")
+
+		fmt.Printf("username: %v, email: %v, password: %v\n", username, email, password)
+
+		c.JSON(http.StatusOK, gin.H{
+			"username": username,
+			"email":    email,
+			"password": password,
+		})
+
 	}
 }
 
 func handleLogin(as auth.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Your login logic
+		userID, _ := c.Get("user_id")
+		username, _ := c.Get("username")
+		password, _ := c.Get("password")
+
+		c.JSON(http.StatusOK, gin.H{
+			"user_id":  userID,
+			"username": username,
+			"password": password,
+		})
 	}
 }
 
 func handleProfile() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Get user info from context
-		userID, _ := c.Get("user_id")
-		username, _ := c.Get("username")
-
-		c.JSON(http.StatusOK, gin.H{
-			"user_id":  userID,
-			"username": username,
-		})
 	}
 }
 
