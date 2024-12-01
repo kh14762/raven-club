@@ -15,8 +15,8 @@ var AuthController = fx.Module("AuthController",
 
 // InitAuthController Public routes
 func InitAuthController(engine *gin.Engine, as auth.Service) {
-	engine.POST("/auth/register", handleRegister(as))
-	engine.POST("/auth/login", handleLogin(as))
+	engine.POST("/api/auth/register", handleRegister(as))
+	engine.POST("/api/auth/login", handleLogin(as))
 }
 
 // InitProtectedRoutes Protected routes
@@ -31,22 +31,29 @@ func InitProtectedRoutes(engine *gin.Engine, as auth.Service, am *auth.Middlewar
 	}
 }
 
+type RegisterRequest struct {
+	Username        string `json:"username"`
+	Email           string `json:"email"`
+	Password        string `json:"password"`
+	ConfirmPassword string `json:"-"`
+}
+
 // Handler functions
 func handleRegister(as auth.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Your registration logic
-		username, _ := c.Get("username")
-		email, _ := c.Get("email")
-		password, _ := c.Get("password")
+		var req RegisterRequest
+		if err := c.Bind(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 
-		fmt.Printf("username: %v, email: %v, password: %v\n", username, email, password)
+		// TODO: Hash the password and confirmPassword fields
+
+		fmt.Printf("username: %s, email: %s, password: %s \n", req.Username, req.Email, req.Password)
 
 		c.JSON(http.StatusOK, gin.H{
-			"username": username,
-			"email":    email,
-			"password": password,
+			"message": "Registration successful", // TODO generate and pass JWT back to client
 		})
-
 	}
 }
 

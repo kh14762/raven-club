@@ -21,8 +21,10 @@
 go.work
 go.work.sum
 
-# .env file
-client/.env
+# Env
+client/.env.*
+client/!.env.example
+client/!.env.test
 
 node_modules
 
@@ -35,11 +37,6 @@ node_modules
 # OS
 .DS_Store
 Thumbs.db
-
-# Env
-/client/.env.*
-/client/!.env.example
-/client/!.env.test
 
 # Vite
 vite.config.js.timestamp-*
