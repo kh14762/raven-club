@@ -44,7 +44,7 @@ func NewTokenManager(secretKey []byte) *TokenManager {
 	}
 }
 
-func (tm *TokenManager) GenerateAccessToken(u types.User) (string, error) {
+func (tm *TokenManager) GenerateAccessToken(u types.User) (string, time.Time, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 
@@ -53,10 +53,11 @@ func (tm *TokenManager) GenerateAccessToken(u types.User) (string, error) {
 	claims["username"] = u.Username
 	claims["exp"] = expiresAt.Unix()
 
-	return token.SignedString(tm.secretKey)
+	t, err := token.SignedString(tm.secretKey)
+	return t, expiresAt, err
 }
 
-func (tm *TokenManager) GenerateRefreshToken(u types.User) (string, error) {
+func (tm *TokenManager) GenerateRefreshToken(u types.User) (string, time.Time, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 
@@ -64,7 +65,8 @@ func (tm *TokenManager) GenerateRefreshToken(u types.User) (string, error) {
 	claims["user_id"] = u.Id
 	claims["exp"] = expiresAt.Unix()
 
-	return token.SignedString(tm.secretKey)
+	t, err := token.SignedString(tm.secretKey)
+	return t, expiresAt, err
 }
 
 func (tm *TokenManager) ValidateToken(tokenString string) (*jwt.Token, error) {

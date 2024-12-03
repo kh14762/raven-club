@@ -104,24 +104,21 @@ func (s *service) Register(req types.RegisterRequest) (*TokenResponse, error) {
 	}
 
 	// Generate tokens using TokenManager
-	accessToken, err := s.tokenManager.GenerateAccessToken(*u)
+	accessToken, accessExpiresAt, err := s.tokenManager.GenerateAccessToken(*u)
 	if err != nil {
 		s.logger.Error("failed to generate access token",
 			zap.Error(err),
 		)
 		return nil, err
 	}
-	expiresAt := time.Now().Add(AccessTokenDuration).Unix()
 
-
-	refreshToken, err := s.tokenManager.GenerateRefreshToken(*u)
+	refreshToken, refreshExpiresAt, err := s.tokenManager.GenerateRefreshToken(*u)
 	if err != nil {
 		s.logger.Error("failed to generate refresh token",
 			zap.Error(err),
 		)
 		return nil, err
 	}
-
 
 	// Store tokens
 	token := types.Token{

@@ -6,13 +6,10 @@ import (
 	"raven-club/internal/pkg/types"
 )
 
-type service struct {
-	logger *zap.Logger
-}
-
 type List struct {
-	Id    uuid.UUID    `json:"id"`
-	Users []types.User `json:"users"`
+	Id     uuid.UUID    `json:"id"`
+	Users  []types.User `json:"users"`
+	logger *zap.Logger
 }
 
 func (l *List) List() []types.User {
@@ -41,6 +38,7 @@ func (l *List) Add(user types.User) {
 	user.Id = l.Id
 
 	l.Users = append(l.Users, user)
+
 }
 
 //func MakeList() *List {
