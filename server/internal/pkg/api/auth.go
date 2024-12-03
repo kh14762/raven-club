@@ -1,11 +1,11 @@
 package api
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
 	"net/http"
 	"raven-club/internal/pkg/auth"
+	"raven-club/internal/pkg/types"
 )
 
 var AuthController = fx.Module("AuthController",
@@ -31,25 +31,16 @@ func InitProtectedRoutes(engine *gin.Engine, as auth.Service, am *auth.Middlewar
 	}
 }
 
-type RegisterRequest struct {
-	Username        string `json:"username"`
-	Email           string `json:"email"`
-	Password        string `json:"password"`
-	ConfirmPassword string `json:"-"`
-}
-
 // Handler functions
 func handleRegister(as auth.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var req RegisterRequest
+		var req types.RegisterRequest
 		if err := c.Bind(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		// TODO: Hash the password and confirmPassword fields
-
-		fmt.Printf("username: %s, email: %s, password: %s \n", req.Username, req.Email, req.Password)
+		// offer to auth service
 
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Registration successful", // TODO generate and pass JWT back to client
@@ -59,15 +50,7 @@ func handleRegister(as auth.Service) gin.HandlerFunc {
 
 func handleLogin(as auth.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID, _ := c.Get("user_id")
-		username, _ := c.Get("username")
-		password, _ := c.Get("password")
-
-		c.JSON(http.StatusOK, gin.H{
-			"user_id":  userID,
-			"username": username,
-			"password": password,
-		})
+		// TODO handle login
 	}
 }
 

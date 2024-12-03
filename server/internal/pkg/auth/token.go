@@ -20,15 +20,18 @@ const (
 )
 
 type Token struct {
-	AccessToken  string
-	RefreshToken string
-	ExpiresAt    int64
-	Type         string
+	AccessToken      string
+	RefreshToken     string
+	AccessExpiresAt  int64
+	RefreshExpiresAt int64
+	Type             string
 }
 
 type TokenResponse struct {
-	AccessToken string `json:"access-token"`
-	ExpiresAt   int64  `json:"expires-at"`
+	AccessToken      string `json:"access-token"`
+	RefreshToken     string `json:"refresh-token"`
+	AccessExpiresAt  int64  `json:"access-expires-at"`
+	RefreshExpiresAt int64  `json:"refresh-expires-at"`
 }
 
 type TokenManager struct {

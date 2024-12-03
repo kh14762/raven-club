@@ -1,6 +1,7 @@
 package user
 
 import (
+	"github.com/google/uuid"
 	"go.uber.org/fx"
 	"raven-club/internal/pkg/types"
 )
@@ -8,14 +9,14 @@ import (
 var Module = fx.Module("Service",
 	fx.Provide(
 		fx.Annotate(
-			MakeList,
+			// MakeList, // TODO: some sort of init of user data structure here
 			fx.As(new(Service)),
 		),
 	),
 )
 
 type Service interface {
-	Get(id uint16) (types.User, bool)
+	Get(id uuid.UUID) (types.User, bool)
 	GetByEmail(email string) (types.User, bool)
 	Add(user types.User)
 	List() []types.User

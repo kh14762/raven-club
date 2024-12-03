@@ -3,6 +3,7 @@ package auth
 import (
 	"errors"
 	"github.com/golang-jwt/jwt"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 	"raven-club/internal/pkg/types"
@@ -19,8 +20,8 @@ var (
 )
 
 type Service interface {
-	Register(u types.User) (*TokenResponse, error)
-	Login(req LoginRequest) (*TokenResponse, error)
+	Register(req types.RegisterRequest) (*TokenResponse, error)
+	Login(req types.LoginRequest) (*TokenResponse, error)
 	ValidateToken(token string) (*jwt.Token, error)
 	RefreshToken(refreshToken string) (*TokenResponse, error)
 }
@@ -33,11 +34,6 @@ type service struct {
 	logger         *zap.Logger
 }
 
-type LoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
 func NewService(us user.Service, config *Config, logger *zap.Logger) Service {
 	return &service{
 		userService:    us,
@@ -48,60 +44,77 @@ func NewService(us user.Service, config *Config, logger *zap.Logger) Service {
 	}
 }
 
-func (s *service) Register(u types.User) (*TokenResponse, error) {
+// Register accepts RegisterRequest, creates a User, offers User to UserService, returns an access token
+func (s *service) Register(req types.RegisterRequest) (*TokenResponse, error) {
 	// Add request logging
 	s.logger.Info("processing registration request",
-		zap.String("username", u.Username),
-		zap.String("email", u.Email),
+		zap.String("username", req.Username),
+		zap.String("email", req.Email),
 	)
 
+	// Generate user Id
+	id, err := uuid.NewUUID()
+	if err != nil {
+		return nil, err
+	}
+
 	// Validate and normalize email
-	if err := s.emailValidator.Validate(u.Email); err != nil {
+	if err := s.emailValidator.Validate(req.Email); err != nil {
 		s.logger.Warn("invalid email format",
-			zap.String("email", u.Email),
+			zap.String("email", req.Email),
 			zap.Error(err),
 		)
 		return nil, err
 	}
-	u.Email = s.emailValidator.Normalize(u.Email)
+	email := s.emailValidator.Normalize(req.Email)
 
 	// Check if email exists
-	if err := s.emailLookup.CheckEmailExists(u.Email); err != nil {
+	if err := s.emailLookup.CheckEmailExists(email); err != nil {
 		s.logger.Info("email already exists",
-			zap.String("email", u.Email),
+			zap.String("email", req.Email),
 		)
 		return nil, err
 	}
 
+
+
 	// Check required fields
-	if u.Username == "" || u.Email == "" || u.Password == "" {
+	if req.Username == "" || req.Email == "" || req.Password == "" {
 		s.logger.Warn("missing required fields",
-			zap.String("username", u.Username),
-			zap.String("email", u.Email),
+			zap.String("username", req.Username),
+			zap.String("email", req.Email),
 		)
 		return nil, ErrMissingFields
 	}
 
 	// Hash password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		s.logger.Error("failed to hash password",
 			zap.Error(err),
 		)
 		return nil, ErrPasswordProcess
 	}
-	u.Password = string(hashedPassword)
+
+	u := &types.User {
+		Id: id,
+		Username: req.Username,
+		Email: email,
+		Password: string(hashedPassword),
+	}
 
 	// Generate tokens using TokenManager
-	accessToken, err := s.tokenManager.GenerateAccessToken(u)
+	accessToken, err := s.tokenManager.GenerateAccessToken(*u)
 	if err != nil {
 		s.logger.Error("failed to generate access token",
 			zap.Error(err),
 		)
 		return nil, err
 	}
+	expiresAt := time.Now().Add(AccessTokenDuration).Unix()
 
-	refreshToken, err := s.tokenManager.GenerateRefreshToken(u)
+
+	refreshToken, err := s.tokenManager.GenerateRefreshToken(*u)
 	if err != nil {
 		s.logger.Error("failed to generate refresh token",
 			zap.Error(err),
@@ -109,32 +122,33 @@ func (s *service) Register(u types.User) (*TokenResponse, error) {
 		return nil, err
 	}
 
-	expiresAt := time.Now().Add(AccessTokenDuration).Unix()
 
 	// Store tokens
-	u.Token = types.Token{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		ExpiresAt:    expiresAt,
-		Type:         "jwt",
+	token := types.Token{
+		AccessToken:     accessToken,
+		RefreshToken:    refreshToken,
+		AccessExpiresAt: expiresAt,
+		Type:            "jwt",
 	}
 
 	// Add the user
-	s.userService.Add(u)
+	s.userService.Add(*u) // TODO: write logic that adds user to database
 
 	s.logger.Info("user registered successfully",
 		zap.String("username", u.Username),
 		zap.String("email", u.Email),
-		zap.Uint16("user_id", u.Id),
+		zap.String("user_id", u.Id.String()),
 	)
 
 	return &TokenResponse{
-		AccessToken: accessToken,
-		ExpiresAt:   expiresAt,
+		AccessToken:      accessToken,
+		AccessExpiresAt:  expiresAt,
+		RefreshToken:     refreshToken,
+		RefreshExpiresAt: expiresAt,
 	}, nil
 }
 
-func (s *service) Login(req LoginRequest) (*TokenResponse, error) {
+func (s *service) Login(req types.LoginRequest) (*TokenResponse, error) {
 	s.logger.Info("processing login request",
 		zap.String("email", req.Email),
 	)
@@ -180,19 +194,21 @@ func (s *service) Login(req LoginRequest) (*TokenResponse, error) {
 		zap.Uint16("user_id", u.Id),
 	)
 
-	expiresAt := time.Now().Add(AccessTokenDuration).Unix()
+	accessExpiresAt := time.Now().Add(AccessTokenDuration).Unix()
 
 	// Update user's token
 	u.Token = types.Token{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		ExpiresAt:    expiresAt,
-		Type:         "jwt",
+		AccessToken:     accessToken,
+		RefreshToken:    refreshToken,
+		AccessExpiresAt: accessExpiresAt,
+		RefreshExpiresAt:
+		Type:            "jwt",
 	}
 
 	return &TokenResponse{
-		AccessToken: accessToken,
-		ExpiresAt:   expiresAt,
+		AccessToken:     accessToken,
+		RefreshToken:    refreshToken,
+		AccessExpiresAt: accessExpiresAt,
 	}, nil
 }
 
@@ -247,7 +263,7 @@ func (s *service) RefreshToken(refreshToken string) (*TokenResponse, error) {
 	expiresAt := time.Now().Add(AccessTokenDuration).Unix()
 
 	return &TokenResponse{
-		AccessToken: accessToken,
-		ExpiresAt:   expiresAt,
+		AccessToken:     accessToken,
+		AccessExpiresAt: expiresAt,
 	}, nil
 }
