@@ -7,6 +7,7 @@ import (
 	"raven-club/internal/pkg/api"
 	"raven-club/internal/pkg/auth"
 	"raven-club/internal/pkg/http"
+	"raven-club/internal/pkg/token"
 	"raven-club/internal/pkg/user"
 )
 
