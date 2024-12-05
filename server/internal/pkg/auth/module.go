@@ -6,7 +6,6 @@ import (
 
 var Module = fx.Module("Auth",
 	fx.Provide(
-		NewConfig,
 		NewService,
 		NewMiddleware,
 	),

@@ -2,49 +2,49 @@ package auth
 
 import (
 	"errors"
-	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
+	"raven-club/internal/pkg/token"
 	"raven-club/internal/pkg/types"
 	"raven-club/internal/pkg/user"
-	"time"
 )
 
-// Error definitions
 var (
 	ErrMissingFields      = errors.New("missing required fields")
 	ErrPasswordProcess    = errors.New("failed to process password")
-	ErrUserNotFound       = errors.New("user not found")
 	ErrInvalidCredentials = errors.New("invalid credentials")
 )
 
 type Service interface {
 	Register(req types.RegisterRequest) (*TokenResponse, error)
 	Login(req types.LoginRequest) (*TokenResponse, error)
-	ValidateToken(token string) (*jwt.Token, error)
-	RefreshToken(refreshToken string) (*TokenResponse, error)
 }
 
 type service struct {
+	logger         *zap.Logger
 	userService    user.Service
+	tokenService   token.Service
 	emailLookup    *EmailLookup
 	emailValidator *EmailValidator
-	tokenManager   *TokenManager
-	logger         *zap.Logger
 }
 
-func NewService(us user.Service, config *Config, logger *zap.Logger) Service {
+type TokenResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
+func NewService(logger *zap.Logger, us user.Service, ts token.Service) Service {
 	return &service{
+		logger:         logger.With(zap.String("service", "auth")), // Add context to all logs
 		userService:    us,
+		tokenService:   ts,
 		emailLookup:    NewEmailLookup(us),
 		emailValidator: NewEmailValidator(),
-		tokenManager:   NewTokenManager(config.SecretKey),
-		logger:         logger.With(zap.String("service", "auth")), // Add context to all logs
 	}
 }
 
-// Register accepts RegisterRequest, creates a User, offers User to UserService, returns an access token
+// Register accepts RegisterRequest, creates a User, adds User to UserService, returns a TokenResponse
 func (s *service) Register(req types.RegisterRequest) (*TokenResponse, error) {
 	// Add request logging
 	s.logger.Info("processing registration request",
@@ -76,8 +76,6 @@ func (s *service) Register(req types.RegisterRequest) (*TokenResponse, error) {
 		return nil, err
 	}
 
-
-
 	// Check required fields
 	if req.Username == "" || req.Email == "" || req.Password == "" {
 		s.logger.Warn("missing required fields",
@@ -96,15 +94,15 @@ func (s *service) Register(req types.RegisterRequest) (*TokenResponse, error) {
 		return nil, ErrPasswordProcess
 	}
 
-	u := &types.User {
-		Id: id,
+	u := &types.User{
+		Id:       id.ID(),
 		Username: req.Username,
-		Email: email,
+		Email:    email,
 		Password: string(hashedPassword),
 	}
 
 	// Generate tokens using TokenManager
-	accessToken, accessExpiresAt, err := s.tokenManager.GenerateAccessToken(*u)
+	accessToken, err := s.tokenService.GenerateAccessToken(*u)
 	if err != nil {
 		s.logger.Error("failed to generate access token",
 			zap.Error(err),
@@ -112,20 +110,12 @@ func (s *service) Register(req types.RegisterRequest) (*TokenResponse, error) {
 		return nil, err
 	}
 
-	refreshToken, refreshExpiresAt, err := s.tokenManager.GenerateRefreshToken(*u)
+	refreshToken, err := s.tokenService.GenerateRefreshToken(*u)
 	if err != nil {
 		s.logger.Error("failed to generate refresh token",
 			zap.Error(err),
 		)
 		return nil, err
-	}
-
-	// Store tokens
-	token := types.Token{
-		AccessToken:     accessToken,
-		RefreshToken:    refreshToken,
-		AccessExpiresAt: expiresAt,
-		Type:            "jwt",
 	}
 
 	// Add the user
@@ -134,14 +124,12 @@ func (s *service) Register(req types.RegisterRequest) (*TokenResponse, error) {
 	s.logger.Info("user registered successfully",
 		zap.String("username", u.Username),
 		zap.String("email", u.Email),
-		zap.String("user_id", u.Id.String()),
+		zap.Uint32("user_id", u.Id),
 	)
 
 	return &TokenResponse{
-		AccessToken:      accessToken,
-		AccessExpiresAt:  expiresAt,
-		RefreshToken:     refreshToken,
-		RefreshExpiresAt: expiresAt,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
 	}, nil
 }
 
@@ -168,99 +156,34 @@ func (s *service) Login(req types.LoginRequest) (*TokenResponse, error) {
 	}
 
 	// Generate new tokens
-	accessToken, err := s.tokenManager.GenerateAccessToken(u)
+	accessToken, err := s.tokenService.GenerateAccessToken(u)
 	if err != nil {
 		s.logger.Error("failed to generate access token",
 			zap.Error(err),
-			zap.Uint16("user_id", u.Id),
+			zap.Uint32("user_id", u.Id),
 		)
 		return nil, err
 	}
 
-	refreshToken, err := s.tokenManager.GenerateRefreshToken(u)
+	refreshToken, err := s.tokenService.GenerateRefreshToken(u)
 	if err != nil {
 		s.logger.Error("failed to generate refresh token",
 			zap.Error(err),
-			zap.Uint16("user_id", u.Id),
+			zap.Uint32("user_id", u.Id),
 		)
 		return nil, err
 	}
 
 	s.logger.Info("user logged in successfully",
 		zap.String("email", req.Email),
-		zap.Uint16("user_id", u.Id),
+		zap.Uint32("user_id", u.Id),
 	)
-
-	accessExpiresAt := time.Now().Add(AccessTokenDuration).Unix()
 
 	// Update user's token
-	u.Token = types.Token{
-		AccessToken:     accessToken,
-		RefreshToken:    refreshToken,
-		AccessExpiresAt: accessExpiresAt,
-		RefreshExpiresAt:
-		Type:            "jwt",
-	}
+	// TODO call RefreshAccessToken?
 
 	return &TokenResponse{
-		AccessToken:     accessToken,
-		RefreshToken:    refreshToken,
-		AccessExpiresAt: accessExpiresAt,
-	}, nil
-}
-
-func (s *service) ValidateToken(token string) (*jwt.Token, error) {
-	return s.tokenManager.ValidateToken(token)
-}
-
-func (s *service) RefreshToken(refreshToken string) (*TokenResponse, error) {
-	s.logger.Info("processing token refresh request")
-
-	// Validate refresh token
-	token, err := s.tokenManager.ValidateToken(refreshToken)
-	if err != nil {
-		s.logger.Warn("invalid refresh token",
-			zap.Error(err),
-		)
-		return nil, err
-	}
-
-	// Extract user ID from token
-	userID, err := s.tokenManager.ExtractUserID(token)
-	if err != nil {
-		s.logger.Error("failed to extract user ID from token",
-			zap.Error(err),
-		)
-		return nil, err
-	}
-
-	// Get user
-	u, found := s.userService.Get(userID)
-	if !found {
-		s.logger.Warn("user not found during token refresh",
-			zap.Uint16("user_id", userID),
-		)
-		return nil, ErrUserNotFound
-	}
-
-	// Generate new access token
-	accessToken, err := s.tokenManager.GenerateAccessToken(u)
-	if err != nil {
-		s.logger.Error("failed to generate new access token",
-			zap.Error(err),
-			zap.Uint16("user_id", userID),
-		)
-		return nil, err
-	}
-
-	s.logger.Info("token refreshed successfully",
-		zap.Uint16("user_id", userID),
-	)
-
-	expiresAt := time.Now().Add(AccessTokenDuration).Unix()
-
-	return &TokenResponse{
-		AccessToken:     accessToken,
-		AccessExpiresAt: expiresAt,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
 	}, nil
 }

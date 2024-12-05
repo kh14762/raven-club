@@ -19,21 +19,6 @@ const (
 	RefreshTokenDuration = time.Hour * 24 * 30 // 30 days
 )
 
-type Token struct {
-	AccessToken      string
-	RefreshToken     string
-	AccessExpiresAt  int64
-	RefreshExpiresAt int64
-	Type             string
-}
-
-type TokenResponse struct {
-	AccessToken      string `json:"access-token"`
-	RefreshToken     string `json:"refresh-token"`
-	AccessExpiresAt  int64  `json:"access-expires-at"`
-	RefreshExpiresAt int64  `json:"refresh-expires-at"`
-}
-
 type TokenManager struct {
 	secretKey []byte
 }

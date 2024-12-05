@@ -1,7 +1,6 @@
 package user
 
 import (
-	"github.com/google/uuid"
 	"go.uber.org/fx"
 	"raven-club/internal/pkg/types"
 )
@@ -16,7 +15,7 @@ var Module = fx.Module("Service",
 )
 
 type Service interface {
-	Get(id uuid.UUID) (types.User, bool)
+	Get(id uint32) (types.User, bool)
 	GetByEmail(email string) (types.User, bool)
 	Add(user types.User)
 	List() []types.User
