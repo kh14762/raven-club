@@ -21,7 +21,7 @@
             </h2>
         </div>
 
-        <form class="mt-8 space-y-6" method="POST" action="?/register">
+        <form class="mt-8 space-y-6" method="POST">
             <div class="rounded-md shadow-sm space-y-4">
                 <!-- Username field -->
                 <div>

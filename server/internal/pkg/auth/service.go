@@ -85,6 +85,14 @@ func (s *service) Register(req types.RegisterRequest) (*TokenResponse, error) {
 		return nil, ErrMissingFields
 	}
 
+	if req.Password != req.ConfirmPassword {
+		s.logger.Warn("passwords do not match",
+			zap.String("password", req.Password),
+			zap.String("confirmPassword", req.ConfirmPassword))
+
+		return nil, ErrPasswordProcess
+	}
+
 	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
