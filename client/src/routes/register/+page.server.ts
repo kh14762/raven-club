@@ -2,6 +2,7 @@ import type {Actions} from './$types'
 import {fail} from '@sveltejs/kit'
 import {z, ZodError} from "zod";
 import { PUBLIC_API_URL } from "$env/static/public"
+import { setCookie } from "$lib/cookie";
 
 const passwordSchema = z
     .string()
@@ -53,7 +54,14 @@ export const actions: Actions = {
 
             if (response.ok) {
                 const data = await response.json();
-                console.log(data) // TODO: take actions based on this response such as navigation or auto login
+                console.log(data)
+                // TODO store JWTs in cookies
+                setCookie("accessToken", data.accessToken, 1)
+                setCookie("refreshToken", data.refreshToken, 7 * 24) // 7 days for refresh token
+
+                // TODO call /api/auth/login to auto login the user
+
+                // TODO route to dashboard page
             } else {
                 const error = await response.json();
                 console.error('Error registering user:', error);
