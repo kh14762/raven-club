@@ -34,7 +34,6 @@ export const actions: Actions = {
         const data = await request.formData();
         console.log(data)
         let formEntries = Object.fromEntries(data)
-
         try {
             const {username, email, password, confirmPassword} = userSchema.parse(formEntries)
 
@@ -47,7 +46,7 @@ export const actions: Actions = {
                 body: JSON.stringify({
                     username: username,
                     email: email,
-                    password: password, // TODO: hash this
+                    password: password,
                     confirmPassword: confirmPassword // Send just in-case TODO: hash this
                 })
             })

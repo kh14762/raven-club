@@ -5,6 +5,7 @@ import (
 	"github.com/golang-jwt/jwt"
 	"go.uber.org/zap"
 	"net/http"
+	"raven-club/internal/pkg/token"
 	"strings"
 )
 
@@ -15,14 +16,16 @@ var (
 )
 
 type Middleware struct {
-	authService Service
-	logger      *zap.Logger
+	logger       *zap.Logger
+	authService  Service
+	tokenService token.Service
 }
 
-func NewMiddleware(authService Service, logger *zap.Logger) *Middleware {
+func NewMiddleware(logger *zap.Logger, authService Service, tokenService token.Service) *Middleware {
 	return &Middleware{
-		authService: authService,
-		logger:      logger.With(zap.String("middleware", "auth")),
+		logger:       logger.With(zap.String("middleware", "auth")),
+		authService:  authService,
+		tokenService: tokenService,
 	}
 }
 
@@ -56,10 +59,10 @@ func (am *Middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		// Validate token
-		token, err := am.authService.ValidateToken(tokenParts[1])
-		if err != nil || !token.Valid {
-			am.logger.Warn("invalid token",
+		// Validate tkn
+		tkn, err := am.tokenService.ValidateToken(tokenParts[1])
+		if err != nil || !tkn.Valid {
+			am.logger.Warn("invalid tkn",
 				zap.Error(err),
 			)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": ErrInvalidToken})
@@ -68,23 +71,23 @@ func (am *Middleware) Handler() gin.HandlerFunc {
 		}
 
 		// Extract claims
-		claims, ok := token.Claims.(jwt.MapClaims)
+		claims, ok := tkn.Claims.(jwt.MapClaims)
 		if !ok {
-			am.logger.Error("failed to extract token claims")
+			am.logger.Error("failed to extract tkn claims")
 			c.JSON(http.StatusUnauthorized, gin.H{"error": ErrInvalidToken})
 			c.Abort()
 			return
 		}
 
 		// Set user context for downstream handlers
-		userID := uint16(claims["user_id"].(float64))
+		userID := uint16(claims["id"].(float64))
 		username := claims["username"].(string)
 
-		c.Set("user_id", userID)
+		c.Set("id", userID)
 		c.Set("username", username)
 
 		am.logger.Info("request authenticated",
-			zap.Uint16("user_id", userID),
+			zap.Uint16("id", userID),
 			zap.String("username", username),
 		)
 

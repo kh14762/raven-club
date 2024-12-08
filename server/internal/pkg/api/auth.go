@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 	"net/http"
 	"raven-club/internal/pkg/auth"
 	"raven-club/internal/pkg/types"
@@ -14,8 +15,8 @@ var AuthController = fx.Module("AuthController",
 )
 
 // InitAuthController Public routes
-func InitAuthController(engine *gin.Engine, as auth.Service) {
-	engine.POST("/api/auth/register", handleRegister(as))
+func InitAuthController(engine *gin.Engine, as auth.Service, logger *zap.Logger) {
+	engine.POST("/api/auth/register", handleRegister(as, logger))
 	engine.POST("/api/auth/login", handleLogin(as))
 }
 
@@ -25,14 +26,14 @@ func InitProtectedRoutes(engine *gin.Engine, as auth.Service, am *auth.Middlewar
 	protected := engine.Group("/api")
 	protected.Use(am.Handler())
 	{
-		protected.GET("/profile", handleProfile())
-		protected.POST("/refresh-token", handleRefreshToken(as))
+		protected.GET("/auth/profile", handleProfile())
+		protected.POST("/auth/refresh-token", handleRefreshToken(as))
 		// Add more protected routes here
 	}
 }
 
 // Handler functions
-func handleRegister(as auth.Service) gin.HandlerFunc {
+func handleRegister(as auth.Service, logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req types.RegisterRequest
 		if err := c.Bind(&req); err != nil {
@@ -40,10 +41,20 @@ func handleRegister(as auth.Service) gin.HandlerFunc {
 			return
 		}
 
-		// offer to auth service
+		logger.Info("Request: ",
+			zap.String("username", req.Username),
+			zap.String("email", req.Email),
+			zap.String("password", req.Password),
+			zap.String("confirm_password", req.ConfirmPassword),
+		)
+
+		tokenResponse, err := as.Register(req)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"failed to register user": err.Error()})
+		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"message": "Registration successful", // TODO generate and pass JWT back to client
+			"tokenResponse": tokenResponse,
 		})
 	}
 }

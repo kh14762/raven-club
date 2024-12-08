@@ -1,23 +1,24 @@
 package user
 
 import (
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"raven-club/internal/pkg/types"
 )
 
-type List struct {
-	Id     uuid.UUID    `json:"id"`
-	Users  []types.User `json:"users"`
+type service struct {
 	logger *zap.Logger
+	Users  []types.User `json:"users"`
 }
 
-func (l *List) List() []types.User {
-	return l.Users
+func NewService(logger *zap.Logger) Service {
+	return &service{
+		logger: logger,
+		Users:  make([]types.User, 0),
+	}
 }
 
-func (l *List) Get(id uuid.UUID) (types.User, bool) {
-	for _, user := range l.Users {
+func (s *service) Get(id uint32) (types.User, bool) {
+	for _, user := range s.Users {
 		if user.Id == id {
 			return user, true
 		}
@@ -25,8 +26,8 @@ func (l *List) Get(id uuid.UUID) (types.User, bool) {
 	return types.User{}, false
 }
 
-func (l *List) GetByEmail(email string) (types.User, bool) {
-	for _, user := range l.Users {
+func (s *service) GetByEmail(email string) (types.User, bool) {
+	for _, user := range s.Users {
 		if user.Email == email {
 			return user, true
 		}
@@ -34,16 +35,10 @@ func (l *List) GetByEmail(email string) (types.User, bool) {
 	return types.User{}, false
 }
 
-func (l *List) Add(user types.User) {
-	user.Id = l.Id
-
-	l.Users = append(l.Users, user)
-
+func (s *service) Add(user types.User) {
+	s.Users = append(s.Users, user)
 }
 
-//func MakeList() *List {
-//	return &List{
-//		Id:    0,
-//		Users: make([]types.User, 0),
-//	}
-//}
+func (s *service) List() []types.User {
+	return s.Users
+}

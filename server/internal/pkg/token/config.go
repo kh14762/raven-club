@@ -10,7 +10,7 @@ type Config struct {
 
 func NewConfig() *Config {
 	return &Config{
-		SecretKey:            []byte("your-secret-key"),
+		SecretKey:            []byte("iPQpgJWX6ccgPR9aIq5+2AygsmXKXYhXS7JUJWGOdhM="), // TODO get from .env file
 		AccessTokenDuration:  time.Hour,
 		RefreshTokenDuration: time.Hour * 24 * 30,
 	}

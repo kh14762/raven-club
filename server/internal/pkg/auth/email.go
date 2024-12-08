@@ -54,6 +54,18 @@ func NewEmailLookup(us user.Service) *EmailLookup {
 	}
 }
 
+// CheckEmailExists checks if an email is already registered
+func (el *EmailLookup) CheckEmailExists(email string) error {
+	_, err := el.FindUser(email)
+	if err == nil {
+		return ErrEmailExists
+	}
+	if errors.Is(err, ErrEmailNotFound) {
+		return nil
+	}
+	return err
+}
+
 // FindUser looks up a user by email
 func (el *EmailLookup) FindUser(email string) (types.User, error) {
 	// Validate email format
@@ -73,16 +85,4 @@ func (el *EmailLookup) FindUser(email string) (types.User, error) {
 	}
 
 	return types.User{}, ErrEmailNotFound
-}
-
-// CheckEmailExists checks if an email is already registered
-func (el *EmailLookup) CheckEmailExists(email string) error {
-	_, err := el.FindUser(email)
-	if err == nil {
-		return ErrEmailExists
-	}
-	if errors.Is(err, ErrEmailNotFound) {
-		return nil
-	}
-	return err
 }

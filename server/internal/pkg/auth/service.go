@@ -30,13 +30,13 @@ type service struct {
 }
 
 type TokenResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
 }
 
 func NewService(logger *zap.Logger, us user.Service, ts token.Service) Service {
 	return &service{
-		logger:         logger.With(zap.String("service", "auth")), // Add context to all logs
+		logger:         logger, // Add context to all logs
 		userService:    us,
 		tokenService:   ts,
 		emailLookup:    NewEmailLookup(us),
@@ -124,7 +124,7 @@ func (s *service) Register(req types.RegisterRequest) (*TokenResponse, error) {
 	s.logger.Info("user registered successfully",
 		zap.String("username", u.Username),
 		zap.String("email", u.Email),
-		zap.Uint32("user_id", u.Id),
+		zap.Uint32("id", u.Id),
 	)
 
 	return &TokenResponse{
@@ -160,7 +160,7 @@ func (s *service) Login(req types.LoginRequest) (*TokenResponse, error) {
 	if err != nil {
 		s.logger.Error("failed to generate access token",
 			zap.Error(err),
-			zap.Uint32("user_id", u.Id),
+			zap.Uint32("id", u.Id),
 		)
 		return nil, err
 	}
@@ -169,14 +169,14 @@ func (s *service) Login(req types.LoginRequest) (*TokenResponse, error) {
 	if err != nil {
 		s.logger.Error("failed to generate refresh token",
 			zap.Error(err),
-			zap.Uint32("user_id", u.Id),
+			zap.Uint32("id", u.Id),
 		)
 		return nil, err
 	}
 
 	s.logger.Info("user logged in successfully",
 		zap.String("email", req.Email),
-		zap.Uint32("user_id", u.Id),
+		zap.Uint32("id", u.Id),
 	)
 
 	// Update user's token

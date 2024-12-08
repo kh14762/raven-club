@@ -34,7 +34,7 @@ func (tm *TokenManager) GenerateAccessToken(u types.User) (string, time.Time, er
 	claims := token.Claims.(jwt.MapClaims)
 
 	expiresAt := time.Now().Add(AccessTokenDuration)
-	claims["user_id"] = u.Id
+	claims["id"] = u.Id
 	claims["username"] = u.Username
 	claims["exp"] = expiresAt.Unix()
 
@@ -47,7 +47,7 @@ func (tm *TokenManager) GenerateRefreshToken(u types.User) (string, time.Time, e
 	claims := token.Claims.(jwt.MapClaims)
 
 	expiresAt := time.Now().Add(RefreshTokenDuration)
-	claims["user_id"] = u.Id
+	claims["id"] = u.Id
 	claims["exp"] = expiresAt.Unix()
 
 	t, err := token.SignedString(tm.secretKey)
@@ -81,7 +81,7 @@ func (tm *TokenManager) ExtractUserID(token *jwt.Token) (uint16, error) {
 		return 0, ErrInvalidClaims
 	}
 
-	userID, ok := claims["user_id"].(float64)
+	userID, ok := claims["id"].(float64)
 	if !ok {
 		return 0, ErrInvalidClaims
 	}

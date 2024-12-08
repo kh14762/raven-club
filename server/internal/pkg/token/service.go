@@ -17,12 +17,6 @@ var (
 	ErrUserNotFound      = errors.New("user not found")
 )
 
-type Service interface {
-	GenerateAccessToken(user types.User) (string, error)
-	GenerateRefreshToken(user types.User) (string, error)
-	RefreshAccessToken(token string) (string, error)
-}
-
 type service struct {
 	logger      *zap.Logger
 	config      *Config
@@ -42,7 +36,7 @@ func (s *service) GenerateAccessToken(u types.User) (string, error) {
 	claims := token.Claims.(jwt.MapClaims)
 
 	expiresAt := time.Now().Add(s.config.AccessTokenDuration)
-	claims["user_id"] = u.Id
+	claims["id"] = u.Id
 	claims["username"] = u.Username
 	claims["exp"] = expiresAt.Unix()
 
@@ -55,7 +49,7 @@ func (s *service) GenerateRefreshToken(u types.User) (string, error) {
 	claims := token.Claims.(jwt.MapClaims)
 
 	expiresAt := time.Now().Add(s.config.RefreshTokenDuration)
-	claims["user_id"] = u.Id
+	claims["id"] = u.Id
 	claims["exp"] = expiresAt.Unix()
 
 	t, err := token.SignedString(s.config.SecretKey)
@@ -66,7 +60,7 @@ func (s *service) RefreshAccessToken(refreshToken string) (string, error) {
 	s.logger.Info("processing token refresh request")
 
 	// Validate refresh token
-	token, err := s.validateToken(refreshToken)
+	token, err := s.ValidateToken(refreshToken)
 	if err != nil {
 		s.logger.Warn("invalid refresh token",
 			zap.Error(err),
@@ -87,7 +81,7 @@ func (s *service) RefreshAccessToken(refreshToken string) (string, error) {
 	u, found := s.userService.Get(userID)
 	if !found {
 		s.logger.Warn("user not found during token refresh",
-			zap.Uint32("user_id", userID),
+			zap.Uint32("id", userID),
 		)
 		return "", ErrUserNotFound
 	}
@@ -97,19 +91,19 @@ func (s *service) RefreshAccessToken(refreshToken string) (string, error) {
 	if err != nil {
 		s.logger.Error("failed to generate new access token",
 			zap.Error(err),
-			zap.Uint32("user_id", userID),
+			zap.Uint32("id", userID),
 		)
 		return "", err
 	}
 
 	s.logger.Info("token refreshed successfully",
-		zap.Uint32("user_id", userID),
+		zap.Uint32("id", userID),
 	)
 
 	return accessToken, nil
 }
 
-func (s *service) validateToken(tokenString string) (*jwt.Token, error) {
+func (s *service) ValidateToken(tokenString string) (*jwt.Token, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, ErrInvalidSignMethod
@@ -136,7 +130,7 @@ func (s *service) extractUserID(token *jwt.Token) (uint32, error) {
 		return 0, ErrInvalidClaims
 	}
 
-	userID, ok := claims["user_id"].(float64)
+	userID, ok := claims["id"].(float64)
 	if !ok {
 		return 0, ErrInvalidClaims
 	}

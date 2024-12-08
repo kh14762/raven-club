@@ -5,12 +5,9 @@ import (
 	"raven-club/internal/pkg/types"
 )
 
-var Module = fx.Module("Service",
+var Module = fx.Module("User",
 	fx.Provide(
-		fx.Annotate(
-			// MakeList, // TODO: some sort of init of user data structure here
-			fx.As(new(Service)),
-		),
+		NewService,
 	),
 )
 
