@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"go.uber.org/zap"
@@ -13,6 +14,7 @@ import (
 var (
 	ErrNoAuthHeader      = "no authorization header"
 	ErrInvalidAuthHeader = "invalid authorization header"
+	ErrInvalidToken      = errors.New("invalid token")
 )
 
 type Middleware struct {
@@ -60,7 +62,7 @@ func (am *Middleware) Handler() gin.HandlerFunc {
 		}
 
 		// Validate tkn
-		tkn, err := am.tokenService.ValidateToken(tokenParts[1])
+		tkn, err := am.tokenService.ValidateJwt(tokenParts[1])
 		if err != nil || !tkn.Valid {
 			am.logger.Warn("invalid tkn",
 				zap.Error(err),

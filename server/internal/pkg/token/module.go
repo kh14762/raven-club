@@ -14,8 +14,8 @@ var Module = fx.Module("Token",
 )
 
 type Service interface {
-	GenerateAccessToken(user types.User) (string, error)
-	GenerateRefreshToken(user types.User) (string, error)
-	RefreshAccessToken(token string) (string, error)
-	ValidateToken(token string) (*jwt.Token, error)
+	GenerateAccessJwt(user types.User) (string, error)
+	GenerateRefreshJwt(user types.User) (string, error)
+	RefreshAccessJwt(token string) (string, error)
+	ValidateJwt(token string) (*jwt.Token, error)
 }

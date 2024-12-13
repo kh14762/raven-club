@@ -1,7 +1,6 @@
 import type { Actions } from './$types'
 import { fail } from '@sveltejs/kit'
 import { z, ZodError } from "zod";
-import { setCookie } from "$lib/cookie";
 import { registerUser } from "$lib/api";
 import { registerSchema } from "$lib/schemas";
 import {handleRegisterError} from "$lib/errors";
@@ -18,8 +17,8 @@ export const actions: Actions = {
                 const json = await response.json();
                 console.log(json)
                 // TODO store JWTs in cookies
-                // setCookie("accessToken", json.accessToken, 1)
-                // setCookie("refreshToken", json.refreshToken, 7 * 24) // 7 days for refresh token
+
+
                 // TODO call /api/auth/login to auto login the user
                 // TODO route to dashboard page
             } else {
@@ -40,3 +39,4 @@ export const actions: Actions = {
         }
     }
 } satisfies Actions
+

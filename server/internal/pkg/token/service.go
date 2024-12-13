@@ -31,12 +31,12 @@ func NewService(logger *zap.Logger, cfg *Config, us user.Service) Service {
 	}
 }
 
-func (s *service) GenerateAccessToken(u types.User) (string, error) {
+func (s *service) GenerateAccessJwt(u types.User) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 
 	expiresAt := time.Now().Add(s.config.AccessTokenDuration)
-	claims["id"] = u.Id
+	claims["id"] = u.ID
 	claims["username"] = u.Username
 	claims["exp"] = expiresAt.Unix()
 
@@ -44,23 +44,23 @@ func (s *service) GenerateAccessToken(u types.User) (string, error) {
 	return t, err
 }
 
-func (s *service) GenerateRefreshToken(u types.User) (string, error) {
+func (s *service) GenerateRefreshJwt(u types.User) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 
 	expiresAt := time.Now().Add(s.config.RefreshTokenDuration)
-	claims["id"] = u.Id
+	claims["id"] = u.ID
 	claims["exp"] = expiresAt.Unix()
 
 	t, err := token.SignedString(s.config.SecretKey)
 	return t, err
 }
 
-func (s *service) RefreshAccessToken(refreshToken string) (string, error) {
+func (s *service) RefreshAccessJwt(refreshToken string) (string, error) {
 	s.logger.Info("processing token refresh request")
 
 	// Validate refresh token
-	token, err := s.ValidateToken(refreshToken)
+	token, err := s.ValidateJwt(refreshToken)
 	if err != nil {
 		s.logger.Warn("invalid refresh token",
 			zap.Error(err),
@@ -87,7 +87,7 @@ func (s *service) RefreshAccessToken(refreshToken string) (string, error) {
 	}
 
 	// Generate new access token
-	accessToken, err := s.GenerateAccessToken(u)
+	accessToken, err := s.GenerateAccessJwt(u)
 	if err != nil {
 		s.logger.Error("failed to generate new access token",
 			zap.Error(err),
@@ -103,7 +103,7 @@ func (s *service) RefreshAccessToken(refreshToken string) (string, error) {
 	return accessToken, nil
 }
 
-func (s *service) ValidateToken(tokenString string) (*jwt.Token, error) {
+func (s *service) ValidateJwt(tokenString string) (*jwt.Token, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, ErrInvalidSignMethod

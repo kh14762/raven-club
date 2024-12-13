@@ -5,9 +5,10 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
-	"raven-club/internal/pkg/token"
+	"raven-club/internal/pkg/session"
 	"raven-club/internal/pkg/types"
 	"raven-club/internal/pkg/user"
+	"time"
 )
 
 var (
@@ -17,42 +18,37 @@ var (
 )
 
 type Service interface {
-	Register(req types.RegisterRequest) (*TokenResponse, error)
-	Login(req types.LoginRequest) (*TokenResponse, error)
+	Register(req types.RegisterRequest) (*types.Session, error) // TODO return SessionToken
+	//Login(req types.LoginRequest) (*types.JwtResponse, error)       // TODO return SessionToken
 }
 
 type service struct {
 	logger         *zap.Logger
 	userService    user.Service
-	tokenService   token.Service
+	sessionService session.Service
 	emailLookup    *EmailLookup
 	emailValidator *EmailValidator
 }
 
-type TokenResponse struct {
-	AccessToken  string `json:"accessToken"`
-	RefreshToken string `json:"refreshToken"`
-}
-
-func NewService(logger *zap.Logger, us user.Service, ts token.Service) Service {
+func NewService(logger *zap.Logger, us user.Service, ss session.Service) Service {
 	return &service{
 		logger:         logger, // Add context to all logs
 		userService:    us,
-		tokenService:   ts,
+		sessionService: ss,
 		emailLookup:    NewEmailLookup(us),
 		emailValidator: NewEmailValidator(),
 	}
 }
 
-// Register accepts RegisterRequest, creates a User, adds User to UserService, returns a TokenResponse
-func (s *service) Register(req types.RegisterRequest) (*TokenResponse, error) {
+// Register accepts RegisterRequest, creates a User, adds User to UserService, returns a JwtResponse
+func (s *service) Register(req types.RegisterRequest) (*types.Session, error) {
 	// Add request logging
 	s.logger.Info("processing registration request",
 		zap.String("username", req.Username),
 		zap.String("email", req.Email),
 	)
 
-	// Generate user Id
+	// Generate user ID
 	id, err := uuid.NewUUID()
 	if err != nil {
 		return nil, err
@@ -103,28 +99,14 @@ func (s *service) Register(req types.RegisterRequest) (*TokenResponse, error) {
 	}
 
 	u := &types.User{
-		Id:       id.ID(),
+		ID:       id.ID(),
 		Username: req.Username,
 		Email:    email,
 		Password: string(hashedPassword),
 	}
 
-	// Generate tokens using TokenManager
-	accessToken, err := s.tokenService.GenerateAccessToken(*u)
-	if err != nil {
-		s.logger.Error("failed to generate access token",
-			zap.Error(err),
-		)
-		return nil, err
-	}
-
-	refreshToken, err := s.tokenService.GenerateRefreshToken(*u)
-	if err != nil {
-		s.logger.Error("failed to generate refresh token",
-			zap.Error(err),
-		)
-		return nil, err
-	}
+	// TODO Generate Session token using SessionManager
+	//sessionToken := s.sessionService.GenerateSessionToken()
 
 	// Add the user
 	s.userService.Add(*u) // TODO: write logic that adds user to database
@@ -132,66 +114,69 @@ func (s *service) Register(req types.RegisterRequest) (*TokenResponse, error) {
 	s.logger.Info("user registered successfully",
 		zap.String("username", u.Username),
 		zap.String("email", u.Email),
-		zap.Uint32("id", u.Id),
+		zap.Uint32("id", u.ID),
 	)
 
-	return &TokenResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
+	// TODO return session Token
+	return &types.Session{
+		ID:        "",
+		UserID:    0,
+		ExpiresAt: time.Now(),
 	}, nil
 }
 
-func (s *service) Login(req types.LoginRequest) (*TokenResponse, error) {
-	s.logger.Info("processing login request",
-		zap.String("email", req.Email),
-	)
+//func (s *service) Login(req types.LoginRequest) (*types.JwtResponse, error) {
+// TODO implement me
 
-	// Find and validate user
-	u, err := s.emailLookup.FindUser(req.Email)
-	if err != nil {
-		s.logger.Info("login failed: user not found",
-			zap.String("email", req.Email),
-		)
-		return nil, ErrInvalidCredentials
-	}
+//s.logger.Info("processing login request",
+//	zap.String("email", req.Email),
+//)
+//
+//// Find and validate user
+//u, err := s.emailLookup.FindUser(req.Email)
+//if err != nil {
+//	s.logger.Info("login failed: user not found",
+//		zap.String("email", req.Email),
+//	)
+//	return nil, ErrInvalidCredentials
+//}
+//
+//// Verify password
+//if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(req.Password)); err != nil {
+//	s.logger.Info("login failed: invalid password",
+//		zap.String("email", req.Email),
+//	)
+//	return nil, ErrInvalidCredentials
+//}
+//
+//// Generate new tokens
+//accessToken, err := s.tokenService.GenerateAccessJwt(u)
+//if err != nil {
+//	s.logger.Error("failed to generate access token",
+//		zap.Error(err),
+//		zap.Uint32("id", u.ID),
+//	)
+//	return nil, err
+//}
+//
+//refreshToken, err := s.tokenService.GenerateRefreshJwt(u)
+//if err != nil {
+//	s.logger.Error("failed to generate refresh token",
+//		zap.Error(err),
+//		zap.Uint32("id", u.ID),
+//	)
+//	return nil, err
+//}
+//
+//s.logger.Info("user logged in successfully",
+//	zap.String("email", req.Email),
+//	zap.Uint32("id", u.ID),
+//)
 
-	// Verify password
-	if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(req.Password)); err != nil {
-		s.logger.Info("login failed: invalid password",
-			zap.String("email", req.Email),
-		)
-		return nil, ErrInvalidCredentials
-	}
+// Update user's token
 
-	// Generate new tokens
-	accessToken, err := s.tokenService.GenerateAccessToken(u)
-	if err != nil {
-		s.logger.Error("failed to generate access token",
-			zap.Error(err),
-			zap.Uint32("id", u.Id),
-		)
-		return nil, err
-	}
-
-	refreshToken, err := s.tokenService.GenerateRefreshToken(u)
-	if err != nil {
-		s.logger.Error("failed to generate refresh token",
-			zap.Error(err),
-			zap.Uint32("id", u.Id),
-		)
-		return nil, err
-	}
-
-	s.logger.Info("user logged in successfully",
-		zap.String("email", req.Email),
-		zap.Uint32("id", u.Id),
-	)
-
-	// Update user's token
-	// TODO call RefreshAccessToken?
-
-	return &TokenResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-	}, nil
-}
+//return &types.JwtResponse{
+//	AccessJwt:  "",
+//	RefreshJwt: "",
+//}, nil
+//}

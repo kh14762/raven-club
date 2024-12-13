@@ -19,7 +19,7 @@ func NewService(logger *zap.Logger) Service {
 
 func (s *service) Get(id uint32) (types.User, bool) {
 	for _, user := range s.Users {
-		if user.Id == id {
+		if user.ID == id {
 			return user, true
 		}
 	}
