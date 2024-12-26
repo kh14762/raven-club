@@ -14,7 +14,7 @@ const ( // TODO: create a Config Struct that reads from a yaml file or something
 	host     = "localhost"
 	port     = 5432
 	user     = "kev"
-	password = ""
+	password = "gulfstream"
 	dbname   = "session_db"
 )
 
@@ -33,18 +33,18 @@ func NewRepository(logger *zap.Logger) *Repository {
 func (r *Repository) Hook(lc fx.Lifecycle) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			r.logger.Info("Connecting to session db...")
+			r.logger.Info("Connecting to test db...")
 			go func() {
 				dbConn, err := r.NewConnection()
 				r.db = dbConn
 				if err != nil {
-					r.logger.Error("Failed to connect to session db", zap.Error(err))
+					r.logger.Error("Failed to connect to test db", zap.Error(err))
 				}
 			}()
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
-			r.logger.Info("Closing session db...")
+			r.logger.Info("Closing test db...")
 			return r.db.Close()
 		},
 	})
@@ -63,7 +63,7 @@ func (r *Repository) NewConnection() (*sql.DB, error) {
 	db.SetMaxOpenConns(100)
 	db.SetConnMaxLifetime(time.Hour)
 
-	r.logger.Info("Successfully connected to session db")
+	r.logger.Info("Successfully connected to test db")
 	return db, nil
 }
 

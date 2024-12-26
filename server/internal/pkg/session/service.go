@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/lib/pq"
+	"github.com/gorilla/sessions"
 )
 
 type Service interface {
@@ -21,14 +21,14 @@ type Service interface {
 }
 
 type service struct {
-	logger     *zap.Logger
-	repository *Repository
+	logger *zap.Logger
+	store  *sessions.CookieStore
 }
 
-func NewService(logger *zap.Logger, r *Repository) Service {
+func NewService(logger *zap.Logger) Service {
 	return &service{
-		logger:     logger,
-		repository: r,
+		logger: logger,
+		store:  sessions.NewCookieStore([]byte("mx1HxnLBtXDWTgJaI13zAN3tG8lQS6jJnwreIHJhXa7/OqP8U62TZfST4Ao/xasZ")),
 	}
 }
 
@@ -52,12 +52,6 @@ func (s *service) CreateSession(token string, userId uint32) (*types.Session, er
 		ID:        sessionID,
 		UserID:    userId,
 		ExpiresAt: time.Now().Add(time.Hour * 24 * 30),
-	}
-
-	_, err := s.repository.db.Exec("INSERT INTO user_session (id, user_id, expires_at) VALUES ($1, $2, $3)",
-		sessionID, userId, session.ExpiresAt)
-	if err != nil {
-		s.logger.Error("Failed to insert session data into db", zap.Error(err))
 	}
 
 	return session, nil
