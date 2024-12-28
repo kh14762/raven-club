@@ -11,6 +11,7 @@ var Module = fx.Module("User",
 	),
 )
 
+// Service TODO: change api to match repo interface
 type Service interface {
 	Get(id uint32) (types.User, bool)
 	GetByEmail(email string) (types.User, bool)
