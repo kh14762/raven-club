@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -15,10 +16,11 @@ var (
 	ErrMissingFields      = errors.New("missing required fields")
 	ErrPasswordProcess    = errors.New("failed to process password")
 	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrFailedUserCreation = errors.New("failed to create user")
 )
 
 type Service interface {
-	Register(req types.RegisterRequest) (*types.Session, error) // TODO return SessionToken
+	Register(ctx context.Context, req types.RegisterRequest) (*types.Session, error) // TODO return SessionToken
 	//Login(req types.LoginRequest) (*types.JwtResponse, error)       // TODO return SessionToken
 }
 
@@ -32,7 +34,7 @@ type service struct {
 
 func NewService(logger *zap.Logger, us user.Service, ss session.Service) Service {
 	return &service{
-		logger:         logger, // Add context to all logs
+		logger:         logger, // CreateUser context to all logs
 		userService:    us,
 		sessionService: ss,
 		emailLookup:    NewEmailLookup(us),
@@ -41,8 +43,8 @@ func NewService(logger *zap.Logger, us user.Service, ss session.Service) Service
 }
 
 // Register accepts RegisterRequest, creates a User, adds User to UserService, returns a JwtResponse
-func (s *service) Register(req types.RegisterRequest) (*types.Session, error) {
-	// Add request logging
+func (s *service) Register(ctx context.Context, req types.RegisterRequest) (*types.Session, error) {
+	// CreateUser request logging
 	s.logger.Info("processing registration request",
 		zap.String("username", req.Username),
 		zap.String("email", req.Email),
@@ -108,8 +110,11 @@ func (s *service) Register(req types.RegisterRequest) (*types.Session, error) {
 	// TODO Generate Session token using SessionManager
 	//sessionToken := s.sessionService.GenerateSessionToken()
 
-	// Add the user
-	s.userService.Add(*u) // TODO: write logic that adds user to database
+	// CreateUser the user
+	err = s.userService.CreateUser(ctx, *u)
+	if err != nil {
+		return nil, ErrFailedUserCreation
+	}
 
 	s.logger.Info("user registered successfully",
 		zap.String("username", u.Username),
@@ -173,7 +178,7 @@ func (s *service) Register(req types.RegisterRequest) (*types.Session, error) {
 //	zap.Uint32("id", u.ID),
 //)
 
-// Update user's token
+// UpdateUser user's token
 
 //return &types.JwtResponse{
 //	AccessJwt:  "",

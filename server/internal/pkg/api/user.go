@@ -12,6 +12,6 @@ var UserController = fx.Module("UserController", fx.Invoke(InitUserController))
 func InitUserController(engine *gin.Engine, us user.Service) {
 
 	engine.GET("/user/list", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"users": us.List()})
+		c.JSON(http.StatusOK, gin.H{"users": "todo list users here"})
 	})
 }

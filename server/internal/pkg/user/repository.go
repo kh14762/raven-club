@@ -4,8 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"raven-club/internal/pkg/types"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -18,8 +21,8 @@ const ( // TODO: create a Config Struct that reads from a yaml file or something
 	dbname   = "raven_club_db"
 )
 
-// Repository TODO: define crud ops
 type Repository interface {
+	Hook(lc fx.Lifecycle)
 	CreateUser(ctx context.Context, user types.User) error
 	GetUserByID(ctx context.Context, id string) (*types.User, error)
 	GetUserByUsername(ctx context.Context, username string) (*types.User, error)
@@ -34,11 +37,48 @@ type repository struct {
 	db     *sql.DB
 }
 
-func NewRepository(logger *zap.Logger, db *sql.DB) Repository {
+func NewRepository(logger *zap.Logger) Repository {
 	return &repository{
 		logger: logger,
-		db:     db,
+		db:     nil,
 	}
+}
+
+func (r *repository) Hook(lc fx.Lifecycle) {
+	lc.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			r.logger.Info("Connecting to User db...")
+			go func() {
+				dbConn, err := r.NewConnection()
+				r.db = dbConn
+				if err != nil {
+					r.logger.Error("Failed to connect to User db", zap.Error(err))
+				}
+				r.logger.Info("Successfully connected to User db")
+			}()
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			r.logger.Info("Closing User db...")
+			return r.db.Close()
+		},
+	})
+}
+
+func (r *repository) NewConnection() (*sql.DB, error) {
+	connStr := fmt.Sprintf("host=%s port=%d "+
+		"user=%s password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		r.logger.Error("failed to open database", zap.Error(err))
+	}
+
+	db.SetMaxIdleConns(10)
+	db.SetMaxOpenConns(100)
+	db.SetConnMaxLifetime(time.Hour)
+
+	return db, nil
 }
 
 func (r *repository) CreateUser(ctx context.Context, user types.User) error {

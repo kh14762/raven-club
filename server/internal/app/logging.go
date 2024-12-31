@@ -7,9 +7,12 @@ import (
 
 func logger() *zap.Logger {
 
-	log, _ := zap.NewDevelopment()
+	config := zap.NewDevelopmentEncoderConfig()
+	config.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	config.EncodeTime = zapcore.ISO8601TimeEncoder
+	logger, _ := zap.NewDevelopment()
 
-	return log.WithOptions(
+	return logger.WithOptions(
 		zap.AddStacktrace(zapcore.ErrorLevel),
 	)
 }

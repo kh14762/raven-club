@@ -11,7 +11,7 @@ import (
 
 var AuthController = fx.Module("AuthController",
 	fx.Invoke(InitAuthController),
-	fx.Invoke(InitProtectedRoutes), // Add protected routes initialization
+	fx.Invoke(InitProtectedRoutes), // CreateUser protected routes initialization
 )
 
 // InitAuthController Public routes
@@ -22,13 +22,13 @@ func InitAuthController(engine *gin.Engine, as auth.Service, logger *zap.Logger)
 
 // InitProtectedRoutes Protected routes
 func InitProtectedRoutes(engine *gin.Engine, as auth.Service, am *auth.Middleware) {
-	// Create protected group
+	// CreateUser protected group
 	protected := engine.Group("/api")
 	protected.Use(am.Handler())
 	{
 		protected.GET("/auth/profile", handleProfile())
 		protected.POST("/auth/refresh-token", handleRefreshToken(as))
-		// Add more protected routes here
+		// CreateUser more protected routes here
 	}
 }
 
@@ -48,7 +48,8 @@ func handleRegister(as auth.Service, logger *zap.Logger) gin.HandlerFunc {
 			zap.String("confirm_password", req.ConfirmPassword),
 		)
 
-		tokenResponse, err := as.Register(req)
+		ctx := c.Request.Context()
+		tokenResponse, err := as.Register(ctx, req)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"failed to register user": err.Error()})
 		}
@@ -67,7 +68,7 @@ func handleLogin(as auth.Service) gin.HandlerFunc {
 
 func handleProfile() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Get user info from context
+		// GetUserByID user info from context
 	}
 }
 

@@ -77,7 +77,7 @@ func (el *EmailLookup) FindUser(email string) (types.User, error) {
 	normalizedEmail := el.validator.Normalize(email)
 
 	// Search for user
-	users := el.userService.List()
+	users := el.userService.ListUsers()
 	for _, u := range users {
 		if el.validator.Normalize(u.Email) == normalizedEmail {
 			return u, nil

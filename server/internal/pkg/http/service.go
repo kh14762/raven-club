@@ -3,13 +3,14 @@ package http
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 	"net/http"
 )
 
 type Server struct {
+	logger *zap.Logger
 	router *gin.Engine
 	srv    *http.Server
 }
@@ -18,16 +19,16 @@ type Server struct {
 func (s *Server) Hook(lc fx.Lifecycle) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			fmt.Println("Starting HTTP server on port 7777")
+			s.logger.Info("Starting HTTP server on port 7777")
 			go func() {
 				if err := s.srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-					fmt.Printf("HTTP server error: %v\n", err)
+					s.logger.Error("HTTP server error: %v\n", zap.Error(err))
 				}
 			}()
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
-			fmt.Println("Shutting down HTTP server")
+			s.logger.Info("Shutting down HTTP server")
 			return s.srv.Shutdown(ctx)
 		},
 	})
