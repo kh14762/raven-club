@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"raven-club/internal/pkg/types"
 	"raven-club/internal/pkg/user"
@@ -55,8 +56,8 @@ func NewEmailLookup(us user.Service) *EmailLookup {
 }
 
 // CheckEmailExists checks if an email is already registered
-func (el *EmailLookup) CheckEmailExists(email string) error {
-	_, err := el.FindUser(email)
+func (el *EmailLookup) CheckEmailExists(ctx context.Context, email string) error {
+	_, err := el.FindUser(ctx, email)
 	if err == nil {
 		return ErrEmailExists
 	}
@@ -67,7 +68,7 @@ func (el *EmailLookup) CheckEmailExists(email string) error {
 }
 
 // FindUser looks up a user by email
-func (el *EmailLookup) FindUser(email string) (types.User, error) {
+func (el *EmailLookup) FindUser(ctx context.Context, email string) (types.User, error) {
 	// Validate email format
 	if err := el.validator.Validate(email); err != nil {
 		return types.User{}, err
@@ -77,7 +78,10 @@ func (el *EmailLookup) FindUser(email string) (types.User, error) {
 	normalizedEmail := el.validator.Normalize(email)
 
 	// Search for user
-	users := el.userService.ListUsers()
+	users, err := el.userService.ListUsers(ctx)
+	if err != nil {
+		return types.User{}, ErrEmailNotFound
+	}
 	for _, u := range users {
 		if el.validator.Normalize(u.Email) == normalizedEmail {
 			return u, nil

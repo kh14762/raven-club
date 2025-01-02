@@ -67,7 +67,7 @@ func (s *service) Register(ctx context.Context, req types.RegisterRequest) (*typ
 	email := s.emailValidator.Normalize(req.Email)
 
 	// Check if email exists
-	if err := s.emailLookup.CheckEmailExists(email); err != nil {
+	if err := s.emailLookup.CheckEmailExists(ctx, email); err != nil {
 		s.logger.Info("email already exists",
 			zap.String("email", req.Email),
 		)

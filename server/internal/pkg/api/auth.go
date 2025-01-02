@@ -26,8 +26,8 @@ func InitProtectedRoutes(engine *gin.Engine, as auth.Service, am *auth.Middlewar
 	protected := engine.Group("/api")
 	protected.Use(am.Handler())
 	{
-		protected.GET("/auth/profile", handleProfile())
-		protected.POST("/auth/refresh-token", handleRefreshToken(as))
+		protected.GET("/api/auth/profile", handleProfile())
+		protected.POST("/api/auth/refresh-token", handleRefreshToken(as))
 		// CreateUser more protected routes here
 	}
 }
