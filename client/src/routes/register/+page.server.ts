@@ -16,8 +16,6 @@ export const actions: Actions = {
             if (response.ok) {
                 const json = await response.json();
                 console.log(json)
-                // TODO store JWTs in cookies
-
 
                 // TODO call /api/auth/login to auto login the user
                 // TODO route to dashboard page

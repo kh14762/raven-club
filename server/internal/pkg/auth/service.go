@@ -8,9 +8,9 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 	"os"
-	"raven-club/internal/pkg/session"
 	"raven-club/internal/pkg/types"
 	"raven-club/internal/pkg/user"
+	"strconv"
 )
 
 var (
@@ -28,20 +28,18 @@ type Service interface {
 type service struct {
 	logger         *zap.Logger
 	userService    user.Service
-	sessionService session.Service
 	emailLookup    *EmailLookup
 	emailValidator *EmailValidator
-	cookieStore    *sessions.CookieStore
+	cookieStore    *sessions.CookieStore //TODO: move this to a module
 }
 
-func NewService(logger *zap.Logger, us user.Service, ss session.Service) Service {
+func NewService(logger *zap.Logger, us user.Service) Service {
 	return &service{
 		logger:         logger, // CreateUser context to all logs
 		userService:    us,
-		sessionService: ss,
 		emailLookup:    NewEmailLookup(us),
 		emailValidator: NewEmailValidator(),
-		cookieStore:    sessions.NewCookieStore([]byte(os.Getenv("TEST_SESSION_KEY"))),
+		cookieStore:    sessions.NewCookieStore([]byte(os.Getenv("TEST_SESSION_KEY"))), //TODO: move this to module
 	}
 }
 
@@ -119,6 +117,14 @@ func (s *service) Register(ctx *gin.Context, req types.RegisterRequest) (*types.
 		return &types.RegisterResponse{}, ErrFailedUserCreation
 	}
 
+	// Create new user session
+	var store = s.cookieStore
+	userSession, err := store.Get(ctx.Request, strconv.Itoa(int(u.ID)))
+	if err != nil {
+		s.logger.Error("failed to get session", zap.Error(err))
+		return &types.RegisterResponse{}, err
+	}
+
 	s.logger.Info("user registered successfully",
 		zap.String("username", u.Username),
 		zap.String("email", u.Email),
@@ -127,7 +133,7 @@ func (s *service) Register(ctx *gin.Context, req types.RegisterRequest) (*types.
 	return &types.RegisterResponse{
 		Success: true,
 		Message: "Registration successful",
-		User:    u,
+		Session: userSession,
 	}, nil
 }
 
@@ -159,18 +165,17 @@ func (s *service) Login(ctx *gin.Context, req types.LoginRequest) (*types.LoginR
 		zap.Uint32("id", u.ID),
 	)
 
-	// Gets existing session or a new one if one does not exist
+	// Create new user session
 	var store = s.cookieStore
-	userSession, err := store.Get(ctx.Request, "user-session")
+	userSession, err := store.Get(ctx.Request, strconv.Itoa(int(u.ID)))
 	if err != nil {
 		s.logger.Error("failed to get session", zap.Error(err))
 		return &types.LoginResponse{}, err
 	}
 
 	return &types.LoginResponse{
-		Success:   true,
-		Message:   "Login successful",
-		User:      u,
-		SessionID: userSession.ID,
+		Success: true,
+		Message: "Login successful",
+		Session: userSession,
 	}, nil
 }
