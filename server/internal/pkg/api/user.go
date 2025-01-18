@@ -12,11 +12,9 @@ import (
 
 var UserController = fx.Module("UserController", fx.Invoke(InitUserController))
 
-func InitUserController(engine *gin.Engine, us user.Service, logger zap.Logger) {
+func InitUserController(engine *gin.Engine, us user.Service, logger *zap.Logger) {
 
-	engine.POST("/api/user/create", func(c *gin.Context) {
-		ctx := c.Request.Context()
-
+	engine.POST("/api/user/create", func(ctx *gin.Context) {
 		u := types.User{
 			ID:       uuid.New().ID(),
 			Username: "Kevy",
@@ -26,28 +24,26 @@ func InitUserController(engine *gin.Engine, us user.Service, logger zap.Logger) 
 		err := us.CreateUser(ctx, u)
 		if err != nil {
 			logger.Error("Failed to create user: ", zap.Error(err))
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
-		c.JSON(http.StatusCreated, gin.H{"user": u})
+		ctx.JSON(http.StatusCreated, gin.H{"user": u})
 	})
 
-	engine.DELETE("/api/user/delete/{id}", func(c *gin.Context) {
-		ctx := c.Request.Context()
-		err := us.DeleteUser(ctx, c.Param("id"))
+	engine.DELETE("/api/user/delete/{id}", func(ctx *gin.Context) {
+		err := us.DeleteUser(ctx, ctx.Param("id"))
 		if err != nil {
 			return
 		}
 
 	})
 
-	engine.GET("/api/user/list", func(c *gin.Context) {
-		ctx := c.Request.Context()
+	engine.GET("/api/user/list", func(ctx *gin.Context) {
 
 		users, err := us.ListUsers(ctx)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
 
-		c.JSON(http.StatusOK, gin.H{"users": users})
+		ctx.JSON(http.StatusOK, gin.H{"users": users})
 	})
 }

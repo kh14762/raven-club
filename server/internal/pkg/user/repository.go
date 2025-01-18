@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"raven-club/internal/pkg/types"
@@ -23,13 +24,13 @@ const ( // TODO: create a Config Struct that reads from a yaml file or something
 
 type Repository interface {
 	Hook(lc fx.Lifecycle)
-	CreateUser(ctx context.Context, user types.User) error
-	GetUserByID(ctx context.Context, id string) (*types.User, error)
-	GetUserByUsername(ctx context.Context, username string) (*types.User, error)
-	GetUserByEmail(ctx context.Context, email string) (*types.User, error)
-	UpdateUser(ctx context.Context, user types.User) error
-	DeleteUser(ctx context.Context, id string) error
-	ListUsers(ctx context.Context) ([]types.User, error)
+	CreateUser(ctx *gin.Context, user types.User) error
+	GetUserByID(ctx *gin.Context, id string) (*types.User, error)
+	GetUserByUsername(ctx *gin.Context, username string) (*types.User, error)
+	GetUserByEmail(ctx *gin.Context, email string) (*types.User, error)
+	UpdateUser(ctx *gin.Context, user types.User) error
+	DeleteUser(ctx *gin.Context, id string) error
+	ListUsers(ctx *gin.Context) ([]types.User, error)
 }
 
 type repository struct {
@@ -81,7 +82,7 @@ func (r *repository) NewConnection() (*sql.DB, error) {
 	return db, nil
 }
 
-func (r *repository) CreateUser(ctx context.Context, user types.User) error {
+func (r *repository) CreateUser(ctx *gin.Context, user types.User) error {
 	query := `
 		INSERT INTO users.users (username, email, password)
 		VALUES ($1, $2, $3)
@@ -90,7 +91,7 @@ func (r *repository) CreateUser(ctx context.Context, user types.User) error {
 	return err
 }
 
-func (r *repository) GetUserByID(ctx context.Context, id string) (*types.User, error) {
+func (r *repository) GetUserByID(ctx *gin.Context, id string) (*types.User, error) {
 	query := `
 		SELECT id, username, email, password
 		FROM users.users
@@ -107,7 +108,7 @@ func (r *repository) GetUserByID(ctx context.Context, id string) (*types.User, e
 	return &user, nil
 }
 
-func (r *repository) GetUserByUsername(ctx context.Context, username string) (*types.User, error) {
+func (r *repository) GetUserByUsername(ctx *gin.Context, username string) (*types.User, error) {
 	query := `
 		SELECT id, username, email, password
 		FROM users.users
@@ -124,7 +125,7 @@ func (r *repository) GetUserByUsername(ctx context.Context, username string) (*t
 	return &user, nil
 }
 
-func (r *repository) GetUserByEmail(ctx context.Context, email string) (*types.User, error) {
+func (r *repository) GetUserByEmail(ctx *gin.Context, email string) (*types.User, error) {
 	query := `
 		SELECT id, username, email, password
 		FROM users.users
@@ -141,7 +142,7 @@ func (r *repository) GetUserByEmail(ctx context.Context, email string) (*types.U
 	return &user, nil
 }
 
-func (r *repository) UpdateUser(ctx context.Context, user types.User) error {
+func (r *repository) UpdateUser(ctx *gin.Context, user types.User) error {
 	query := `
 		UPDATE users.users
 		SET username = $1, email = $2, password = $3
@@ -151,7 +152,7 @@ func (r *repository) UpdateUser(ctx context.Context, user types.User) error {
 	return err
 }
 
-func (r *repository) DeleteUser(ctx context.Context, id string) error {
+func (r *repository) DeleteUser(ctx *gin.Context, id string) error {
 	query := `
 		DELETE FROM users.users
 		WHERE id = $1
@@ -160,7 +161,7 @@ func (r *repository) DeleteUser(ctx context.Context, id string) error {
 	return err
 }
 
-func (r *repository) ListUsers(ctx context.Context) ([]types.User, error) {
+func (r *repository) ListUsers(ctx *gin.Context) ([]types.User, error) {
 	query := `
 		SELECT id, username, email, password
 		FROM users.users
@@ -169,7 +170,12 @@ func (r *repository) ListUsers(ctx context.Context) ([]types.User, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			r.logger.Error("failed to close rows", zap.Error(err))
+		}
+	}(rows)
 
 	var users []types.User
 	for rows.Next() {

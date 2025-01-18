@@ -1,8 +1,8 @@
 package auth
 
 import (
-	"context"
 	"errors"
+	"github.com/gin-gonic/gin"
 	"raven-club/internal/pkg/types"
 	"raven-club/internal/pkg/user"
 	"regexp"
@@ -56,22 +56,23 @@ func NewEmailLookup(us user.Service) *EmailLookup {
 }
 
 // CheckEmailExists checks if an email is already registered
-func (el *EmailLookup) CheckEmailExists(ctx context.Context, email string) error {
+// returns true if email exists
+func (el *EmailLookup) CheckEmailExists(ctx *gin.Context, email string) error {
 	_, err := el.FindUser(ctx, email)
 	if err == nil {
 		return ErrEmailExists
 	}
 	if errors.Is(err, ErrEmailNotFound) {
-		return nil
+		return err
 	}
 	return err
 }
 
 // FindUser looks up a user by email
-func (el *EmailLookup) FindUser(ctx context.Context, email string) (types.User, error) {
+func (el *EmailLookup) FindUser(ctx *gin.Context, email string) (*types.User, error) {
 	// Validate email format
 	if err := el.validator.Validate(email); err != nil {
-		return types.User{}, err
+		return &types.User{}, err
 	}
 
 	// Normalize email
@@ -80,13 +81,13 @@ func (el *EmailLookup) FindUser(ctx context.Context, email string) (types.User, 
 	// Search for user
 	users, err := el.userService.ListUsers(ctx)
 	if err != nil {
-		return types.User{}, ErrEmailNotFound
+		return &types.User{}, ErrEmailNotFound
 	}
 	for _, u := range users {
 		if el.validator.Normalize(u.Email) == normalizedEmail {
-			return u, nil
+			return &u, nil
 		}
 	}
 
-	return types.User{}, ErrEmailNotFound
+	return &types.User{}, ErrEmailNotFound
 }

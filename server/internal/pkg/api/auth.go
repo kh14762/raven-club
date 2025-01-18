@@ -16,8 +16,8 @@ var AuthController = fx.Module("AuthController",
 
 // InitAuthController Public routes
 func InitAuthController(engine *gin.Engine, as auth.Service, logger *zap.Logger) {
-	engine.POST("/api/auth/register", handleRegister(as, logger))
-	engine.POST("/api/auth/login", handleLogin(as))
+	engine.POST("/api/auth/register", HandleRegister(as, logger))
+	engine.POST("/api/auth/login", HandleLogin(as))
 }
 
 // InitProtectedRoutes Protected routes
@@ -32,15 +32,15 @@ func InitProtectedRoutes(engine *gin.Engine, as auth.Service, am *auth.Middlewar
 	}
 }
 
-// Handler functions
-func handleRegister(as auth.Service, logger *zap.Logger) gin.HandlerFunc {
-	return func(c *gin.Context) {
+func HandleRegister(as auth.Service, logger *zap.Logger) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
 		var req types.RegisterRequest
-		if err := c.Bind(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if err := ctx.Bind(&req); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
+		// TODO: remove in prod
 		logger.Info("Request: ",
 			zap.String("username", req.Username),
 			zap.String("email", req.Email),
@@ -48,19 +48,15 @@ func handleRegister(as auth.Service, logger *zap.Logger) gin.HandlerFunc {
 			zap.String("confirm_password", req.ConfirmPassword),
 		)
 
-		ctx := c.Request.Context()
-		tokenResponse, err := as.Register(ctx, req)
+		response, err := as.Register(ctx, req)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"failed to register user": err.Error()})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"failed to register user": err.Error()})
 		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"tokenResponse": tokenResponse,
-		})
+		ctx.JSON(http.StatusOK, response)
 	}
 }
 
-func handleLogin(as auth.Service) gin.HandlerFunc {
+func HandleLogin(as auth.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// TODO handle login
 	}

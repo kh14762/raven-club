@@ -1,15 +1,16 @@
 package auth
 
 import (
-	"context"
 	"errors"
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/gorilla/sessions"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
+	"os"
 	"raven-club/internal/pkg/session"
 	"raven-club/internal/pkg/types"
 	"raven-club/internal/pkg/user"
-	"time"
 )
 
 var (
@@ -20,8 +21,8 @@ var (
 )
 
 type Service interface {
-	Register(ctx context.Context, req types.RegisterRequest) (*types.Session, error) // TODO return SessionToken
-	//Login(req types.LoginRequest) (*types.JwtResponse, error)       // TODO return SessionToken
+	Register(ctx *gin.Context, req types.RegisterRequest) (*types.RegisterResponse, error)
+	Login(ctx *gin.Context, req types.LoginRequest) (*types.LoginResponse, error)
 }
 
 type service struct {
@@ -30,6 +31,7 @@ type service struct {
 	sessionService session.Service
 	emailLookup    *EmailLookup
 	emailValidator *EmailValidator
+	cookieStore    *sessions.CookieStore
 }
 
 func NewService(logger *zap.Logger, us user.Service, ss session.Service) Service {
@@ -39,11 +41,12 @@ func NewService(logger *zap.Logger, us user.Service, ss session.Service) Service
 		sessionService: ss,
 		emailLookup:    NewEmailLookup(us),
 		emailValidator: NewEmailValidator(),
+		cookieStore:    sessions.NewCookieStore([]byte(os.Getenv("TEST_SESSION_KEY"))),
 	}
 }
 
 // Register accepts RegisterRequest, creates a User, adds User to UserService, returns a JwtResponse
-func (s *service) Register(ctx context.Context, req types.RegisterRequest) (*types.Session, error) {
+func (s *service) Register(ctx *gin.Context, req types.RegisterRequest) (*types.RegisterResponse, error) {
 	// CreateUser request logging
 	s.logger.Info("processing registration request",
 		zap.String("username", req.Username),
@@ -53,7 +56,7 @@ func (s *service) Register(ctx context.Context, req types.RegisterRequest) (*typ
 	// Generate user ID
 	id, err := uuid.NewUUID()
 	if err != nil {
-		return nil, err
+		return &types.RegisterResponse{}, err
 	}
 
 	// Validate and normalize email
@@ -62,42 +65,45 @@ func (s *service) Register(ctx context.Context, req types.RegisterRequest) (*typ
 			zap.String("email", req.Email),
 			zap.Error(err),
 		)
-		return nil, err
+		return &types.RegisterResponse{}, err
 	}
 	email := s.emailValidator.Normalize(req.Email)
 
 	// Check if email exists
-	if err := s.emailLookup.CheckEmailExists(ctx, email); err != nil {
-		s.logger.Info("email already exists",
+	if err := s.emailLookup.CheckEmailExists(ctx, email); err != nil && errors.Is(err, ErrEmailNotFound) {
+		s.logger.Info("email does not exists",
 			zap.String("email", req.Email),
 		)
-		return nil, err
+	} else if err != nil && errors.Is(err, ErrEmailExists) {
+		s.logger.Error("Email exists", zap.Error(err))
+		return &types.RegisterResponse{}, err
+	} else {
+		s.logger.Error("failed to check email", zap.String("email", req.Email), zap.Error(err))
+		return &types.RegisterResponse{}, err
 	}
 
 	// Check required fields
 	if req.Username == "" || req.Email == "" || req.Password == "" {
-		s.logger.Warn("missing required fields",
+		s.logger.Error("missing required fields",
 			zap.String("username", req.Username),
 			zap.String("email", req.Email),
 		)
-		return nil, ErrMissingFields
+		return &types.RegisterResponse{}, ErrMissingFields
 	}
 
 	if req.Password != req.ConfirmPassword {
-		s.logger.Warn("passwords do not match",
-			zap.String("password", req.Password),
-			zap.String("confirmPassword", req.ConfirmPassword))
-
-		return nil, ErrPasswordProcess
+		s.logger.Warn("passwords do not match")
+		return &types.RegisterResponse{}, ErrPasswordProcess
 	}
 
 	// Hash password
+	// TODO: salt password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		s.logger.Error("failed to hash password",
 			zap.Error(err),
 		)
-		return nil, ErrPasswordProcess
+		return &types.RegisterResponse{}, ErrPasswordProcess
 	}
 
 	u := &types.User{
@@ -107,13 +113,10 @@ func (s *service) Register(ctx context.Context, req types.RegisterRequest) (*typ
 		Password: string(hashedPassword),
 	}
 
-	// TODO Generate Session token using SessionManager
-	//sessionToken := s.sessionService.GenerateSessionToken()
-
 	// CreateUser the user
 	err = s.userService.CreateUser(ctx, *u)
 	if err != nil {
-		return nil, ErrFailedUserCreation
+		return &types.RegisterResponse{}, ErrFailedUserCreation
 	}
 
 	s.logger.Info("user registered successfully",
@@ -121,67 +124,53 @@ func (s *service) Register(ctx context.Context, req types.RegisterRequest) (*typ
 		zap.String("email", u.Email),
 		zap.Uint32("id", u.ID),
 	)
-
-	// TODO return session Token
-	return &types.Session{
-		ID:        "",
-		UserID:    0,
-		ExpiresAt: time.Now(),
+	return &types.RegisterResponse{
+		Success: true,
+		Message: "Registration successful",
+		User:    u,
 	}, nil
 }
 
-//func (s *service) Login(req types.LoginRequest) (*types.JwtResponse, error) {
-// TODO implement me
+func (s *service) Login(ctx *gin.Context, req types.LoginRequest) (*types.LoginResponse, error) {
+	// TODO implement me
+	s.logger.Info("processing login request",
+		zap.String("email", req.Email),
+	)
 
-//s.logger.Info("processing login request",
-//	zap.String("email", req.Email),
-//)
-//
-//// Find and validate user
-//u, err := s.emailLookup.FindUser(req.Email)
-//if err != nil {
-//	s.logger.Info("login failed: user not found",
-//		zap.String("email", req.Email),
-//	)
-//	return nil, ErrInvalidCredentials
-//}
-//
-//// Verify password
-//if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(req.Password)); err != nil {
-//	s.logger.Info("login failed: invalid password",
-//		zap.String("email", req.Email),
-//	)
-//	return nil, ErrInvalidCredentials
-//}
-//
-//// Generate new tokens
-//accessToken, err := s.tokenService.GenerateAccessJwt(u)
-//if err != nil {
-//	s.logger.Error("failed to generate access token",
-//		zap.Error(err),
-//		zap.Uint32("id", u.ID),
-//	)
-//	return nil, err
-//}
-//
-//refreshToken, err := s.tokenService.GenerateRefreshJwt(u)
-//if err != nil {
-//	s.logger.Error("failed to generate refresh token",
-//		zap.Error(err),
-//		zap.Uint32("id", u.ID),
-//	)
-//	return nil, err
-//}
-//
-//s.logger.Info("user logged in successfully",
-//	zap.String("email", req.Email),
-//	zap.Uint32("id", u.ID),
-//)
+	// Find and validate user
+	u, err := s.emailLookup.FindUser(ctx, req.Email)
+	if err != nil {
+		s.logger.Info("login failed: user not found",
+			zap.String("email", req.Email),
+		)
+		return &types.LoginResponse{}, ErrInvalidCredentials
+	}
 
-// UpdateUser user's token
+	// Verify password
+	if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(req.Password)); err != nil {
+		s.logger.Info("login failed: invalid password",
+			zap.String("email", req.Email),
+		)
+		return &types.LoginResponse{}, ErrInvalidCredentials
+	}
 
-//return &types.JwtResponse{
-//	AccessJwt:  "",
-//	RefreshJwt: "",
-//}, nil
-//}
+	s.logger.Info("user logged in successfully",
+		zap.String("email", req.Email),
+		zap.Uint32("id", u.ID),
+	)
+
+	// Gets existing session or a new one if one does not exist
+	var store = s.cookieStore
+	userSession, err := store.Get(ctx.Request, "user-session")
+	if err != nil {
+		s.logger.Error("failed to get session", zap.Error(err))
+		return &types.LoginResponse{}, err
+	}
+
+	return &types.LoginResponse{
+		Success:   true,
+		Message:   "Login successful",
+		User:      u,
+		SessionID: userSession.ID,
+	}, nil
+}
