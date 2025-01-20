@@ -6,7 +6,6 @@ import (
 	"go.uber.org/zap"
 	"net/http"
 	"raven-club/internal/pkg/auth"
-	"raven-club/internal/pkg/types"
 )
 
 var AuthController = fx.Module("AuthController",
@@ -34,7 +33,7 @@ func InitProtectedRoutes(engine *gin.Engine, as auth.Service, am *auth.Middlewar
 
 func HandleRegister(as auth.Service, logger *zap.Logger) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		var req types.RegisterRequest
+		var req auth.RegisterRequest
 		if err := ctx.Bind(&req); err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -48,6 +47,7 @@ func HandleRegister(as auth.Service, logger *zap.Logger) gin.HandlerFunc {
 			zap.String("confirm_password", req.ConfirmPassword),
 		)
 
+		// return a session as response
 		response, err := as.Register(ctx, req)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"failed to register user": err.Error()})

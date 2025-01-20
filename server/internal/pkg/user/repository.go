@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"raven-club/internal/pkg/types"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -24,13 +23,13 @@ const ( // TODO: create a Config Struct that reads from a yaml file or something
 
 type Repository interface {
 	Hook(lc fx.Lifecycle)
-	CreateUser(ctx *gin.Context, user types.User) error
-	GetUserByID(ctx *gin.Context, id string) (*types.User, error)
-	GetUserByUsername(ctx *gin.Context, username string) (*types.User, error)
-	GetUserByEmail(ctx *gin.Context, email string) (*types.User, error)
-	UpdateUser(ctx *gin.Context, user types.User) error
+	CreateUser(ctx *gin.Context, user User) error
+	GetUserByID(ctx *gin.Context, id string) (*User, error)
+	GetUserByUsername(ctx *gin.Context, username string) (*User, error)
+	GetUserByEmail(ctx *gin.Context, email string) (*User, error)
+	UpdateUser(ctx *gin.Context, user User) error
 	DeleteUser(ctx *gin.Context, id string) error
-	ListUsers(ctx *gin.Context) ([]types.User, error)
+	ListUsers(ctx *gin.Context) ([]User, error)
 }
 
 type repository struct {
@@ -82,7 +81,7 @@ func (r *repository) NewConnection() (*sql.DB, error) {
 	return db, nil
 }
 
-func (r *repository) CreateUser(ctx *gin.Context, user types.User) error {
+func (r *repository) CreateUser(ctx *gin.Context, user User) error {
 	query := `
 		INSERT INTO users.users (username, email, password)
 		VALUES ($1, $2, $3)
@@ -91,13 +90,13 @@ func (r *repository) CreateUser(ctx *gin.Context, user types.User) error {
 	return err
 }
 
-func (r *repository) GetUserByID(ctx *gin.Context, id string) (*types.User, error) {
+func (r *repository) GetUserByID(ctx *gin.Context, id string) (*User, error) {
 	query := `
 		SELECT id, username, email, password
 		FROM users.users
 		WHERE id = $1
 	`
-	var user types.User
+	var user User
 	err := r.db.QueryRowContext(ctx, query, id).Scan(&user.ID, &user.Username, &user.Email, &user.Password)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -108,13 +107,13 @@ func (r *repository) GetUserByID(ctx *gin.Context, id string) (*types.User, erro
 	return &user, nil
 }
 
-func (r *repository) GetUserByUsername(ctx *gin.Context, username string) (*types.User, error) {
+func (r *repository) GetUserByUsername(ctx *gin.Context, username string) (*User, error) {
 	query := `
 		SELECT id, username, email, password
 		FROM users.users
 		WHERE username = $1
 	`
-	var user types.User
+	var user User
 	err := r.db.QueryRowContext(ctx, query, username).Scan(&user.ID, &user.Username, &user.Email, &user.Password)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -125,13 +124,13 @@ func (r *repository) GetUserByUsername(ctx *gin.Context, username string) (*type
 	return &user, nil
 }
 
-func (r *repository) GetUserByEmail(ctx *gin.Context, email string) (*types.User, error) {
+func (r *repository) GetUserByEmail(ctx *gin.Context, email string) (*User, error) {
 	query := `
 		SELECT id, username, email, password
 		FROM users.users
 		WHERE email = $1
 	`
-	var user types.User
+	var user User
 	err := r.db.QueryRowContext(ctx, query, email).Scan(&user.ID, &user.Username, &user.Email, &user.Password)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -142,7 +141,7 @@ func (r *repository) GetUserByEmail(ctx *gin.Context, email string) (*types.User
 	return &user, nil
 }
 
-func (r *repository) UpdateUser(ctx *gin.Context, user types.User) error {
+func (r *repository) UpdateUser(ctx *gin.Context, user User) error {
 	query := `
 		UPDATE users.users
 		SET username = $1, email = $2, password = $3
@@ -161,7 +160,7 @@ func (r *repository) DeleteUser(ctx *gin.Context, id string) error {
 	return err
 }
 
-func (r *repository) ListUsers(ctx *gin.Context) ([]types.User, error) {
+func (r *repository) ListUsers(ctx *gin.Context) ([]User, error) {
 	query := `
 		SELECT id, username, email, password
 		FROM users.users
@@ -177,9 +176,9 @@ func (r *repository) ListUsers(ctx *gin.Context) ([]types.User, error) {
 		}
 	}(rows)
 
-	var users []types.User
+	var users []User
 	for rows.Next() {
-		var user types.User
+		var user User
 		if err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.Password); err != nil {
 			return nil, err
 		}

@@ -1,4 +1,4 @@
-package types
+package user
 
 type User struct {
 	ID       uint32 `json:"ID"`

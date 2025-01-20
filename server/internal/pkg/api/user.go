@@ -6,7 +6,6 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"net/http"
-	"raven-club/internal/pkg/types"
 	"raven-club/internal/pkg/user"
 )
 
@@ -15,7 +14,7 @@ var UserController = fx.Module("UserController", fx.Invoke(InitUserController))
 func InitUserController(engine *gin.Engine, us user.Service, logger *zap.Logger) {
 
 	engine.POST("/api/user/create", func(ctx *gin.Context) {
-		u := types.User{
+		u := user.User{
 			ID:       uuid.New().ID(),
 			Username: "Kevy",
 			Email:    "kevin.j.heritage@ravenclub.net",

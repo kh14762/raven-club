@@ -3,7 +3,6 @@ package auth
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
-	"raven-club/internal/pkg/types"
 	"raven-club/internal/pkg/user"
 	"regexp"
 	"strings"
@@ -69,10 +68,10 @@ func (el *EmailLookup) CheckEmailExists(ctx *gin.Context, email string) error {
 }
 
 // FindUser looks up a user by email
-func (el *EmailLookup) FindUser(ctx *gin.Context, email string) (*types.User, error) {
+func (el *EmailLookup) FindUser(ctx *gin.Context, email string) (*user.User, error) {
 	// Validate email format
 	if err := el.validator.Validate(email); err != nil {
-		return &types.User{}, err
+		return &user.User{}, err
 	}
 
 	// Normalize email
@@ -81,7 +80,7 @@ func (el *EmailLookup) FindUser(ctx *gin.Context, email string) (*types.User, er
 	// Search for user
 	users, err := el.userService.ListUsers(ctx)
 	if err != nil {
-		return &types.User{}, ErrEmailNotFound
+		return &user.User{}, ErrEmailNotFound
 	}
 	for _, u := range users {
 		if el.validator.Normalize(u.Email) == normalizedEmail {
@@ -89,5 +88,5 @@ func (el *EmailLookup) FindUser(ctx *gin.Context, email string) (*types.User, er
 		}
 	}
 
-	return &types.User{}, ErrEmailNotFound
+	return &user.User{}, ErrEmailNotFound
 }
