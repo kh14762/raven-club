@@ -47,3 +47,4 @@ vite.config.ts.timestamp-*
 
 # SvelteKit
 .svelte-kit/
+/.env
