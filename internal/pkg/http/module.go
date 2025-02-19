@@ -5,6 +5,7 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"net/http"
+	"os"
 )
 
 var Module = fx.Module("HttpServer",
@@ -20,7 +21,7 @@ func NewHttpServer(logger *zap.Logger, router *gin.Engine) *Server {
 		logger: logger,
 		router: router,
 		srv: &http.Server{
-			Addr:    ":7777",
+			Addr:    ":" + os.Getenv("PORT"),
 			Handler: router,
 		},
 	}

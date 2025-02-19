@@ -19,7 +19,7 @@ type Server struct {
 func (s *Server) Hook(lc fx.Lifecycle) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			s.logger.Info("Starting HTTP server on port 7777")
+			s.logger.Info("Starting HTTP server on port 7770")
 			go func() {
 				if err := s.srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 					s.logger.Error("HTTP server error: %v\n", zap.Error(err))

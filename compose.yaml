@@ -1,12 +1,20 @@
+networks:
+  raven-club-network:
+    name: raven-club-network
+
 services:
   app:
+    container_name: raven-club
     build:
       context: .
       dockerfile: Dockerfile
+    image: raven-club/app:${TAG:-latest}
     environment:
       - PORT=7770
-    ports:
-      - "7770:7770"
+    profiles:
+      - production
+    networks:
+      - raven-club-network
 
   proxy:
     image: nginx:latest
@@ -16,3 +24,21 @@ services:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - app
+    profiles:
+      - production
+    networks:
+      - raven-club-network
+
+  app-debug:
+    build:
+      context: .
+      dockerfile: debug/Dockerfile
+    environment:
+      - PORT=7771
+    ports:
+      - "40000:40000"
+      - "7771:7771"
+    profiles:
+      - debug
+    networks:
+      - raven-club-network

@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 	"time"
 
+	// https://github.com/jackc/pgx/wiki/Getting-started-with-pgx use this instead
 	_ "github.com/lib/pq"
 )
 
@@ -53,8 +54,9 @@ func (r *repository) Hook(lc fx.Lifecycle) {
 				r.db = dbConn
 				if err != nil {
 					r.logger.Error("Failed to connect to User db", zap.Error(err))
+				} else {
+					r.logger.Info("Successfully connected to User db")
 				}
-				r.logger.Info("Successfully connected to User db")
 			}()
 			return nil
 		},
@@ -69,16 +71,21 @@ func (r *repository) NewConnection() (*sql.DB, error) {
 	connStr := fmt.Sprintf("host=%s port=%d "+
 		"user=%s password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
+
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		r.logger.Error("failed to open database", zap.Error(err))
+		r.logger.Error("failed to get db handle", zap.Error(err))
+	}
+	err = db.Ping()
+	if err != nil {
+		r.logger.Error("failed to ping database", zap.Error(err))
 	}
 
 	db.SetMaxIdleConns(10)
 	db.SetMaxOpenConns(100)
 	db.SetConnMaxLifetime(time.Hour)
 
-	return db, nil
+	return db, err
 }
 
 func (r *repository) CreateUser(ctx *gin.Context, user User) error {
