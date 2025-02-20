@@ -6,12 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+	"log"
+	"os"
 	"time"
-
-	// https://github.com/jackc/pgx/wiki/Getting-started-with-pgx use this instead
-	_ "github.com/lib/pq"
 )
 
 const ( // TODO: create a Config Struct that reads from a yaml file or something
@@ -23,7 +23,7 @@ const ( // TODO: create a Config Struct that reads from a yaml file or something
 )
 
 type Repository interface {
-	Hook(lc fx.Lifecycle)
+	NewConnection(lc fx.Lifecycle)
 	CreateUser(ctx *gin.Context, user User) error
 	GetUserByID(ctx *gin.Context, id string) (*User, error)
 	GetUserByUsername(ctx *gin.Context, username string) (*User, error)
@@ -35,57 +35,55 @@ type Repository interface {
 
 type repository struct {
 	logger *zap.Logger
-	db     *sql.DB
+	pool   *pgxpool.Pool
 }
 
 func NewRepository(logger *zap.Logger) Repository {
 	return &repository{
 		logger: logger,
-		db:     nil,
+		pool:   nil,
 	}
 }
 
-func (r *repository) Hook(lc fx.Lifecycle) {
+func (r *repository) NewConnection(lc fx.Lifecycle) {
+	dbURL := os.Getenv("USER_DATABASE_URL")
+	if dbURL == "" {
+		err := errors.New("USER_DATABASE_URL environment variable not set")
+		r.logger.Error("", zap.Error(err))
+	}
+
+	// Create a context with a timeout for connecting to the database.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Create a connection pool. Adjust configuration as required.
+	//	db.SetMaxIdleConns(10)
+	//	db.SetMaxOpenConns(100)
+	//	db.SetConnMaxLifetime(time.Hour) // TODO: set these parameters
+	pool, err := pgxpool.New(ctx, dbURL)
+	if err != nil {
+		r.logger.Error("unable to create connection pool: ", zap.Error(err))
+	}
+
+	r.pool = pool
+
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			r.logger.Info("Connecting to User db...")
-			go func() {
-				dbConn, err := r.NewConnection()
-				r.db = dbConn
-				if err != nil {
-					r.logger.Error("Failed to connect to User db", zap.Error(err))
-				} else {
-					r.logger.Info("Successfully connected to User db")
-				}
-			}()
+			r.logger.Info("Starting user database connection pool...")
+			var currentTime time.Time
+			err := r.pool.QueryRow(ctx, "SELECT NOW()").Scan(&currentTime)
+			if err != nil {
+				return fmt.Errorf("failed to verify connection: %w", err)
+			}
+			log.Printf("Database connection pool started. Current DB time: %v", currentTime)
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
-			r.logger.Info("Closing User db...")
-			return r.db.Close()
+			r.logger.Info("Closing user database connection pool...")
+			r.pool.Close()
+			return nil
 		},
 	})
-}
-
-func (r *repository) NewConnection() (*sql.DB, error) {
-	connStr := fmt.Sprintf("host=%s port=%d "+
-		"user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
-
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		r.logger.Error("failed to get db handle", zap.Error(err))
-	}
-	err = db.Ping()
-	if err != nil {
-		r.logger.Error("failed to ping database", zap.Error(err))
-	}
-
-	db.SetMaxIdleConns(10)
-	db.SetMaxOpenConns(100)
-	db.SetConnMaxLifetime(time.Hour)
-
-	return db, err
 }
 
 func (r *repository) CreateUser(ctx *gin.Context, user User) error {
@@ -93,7 +91,7 @@ func (r *repository) CreateUser(ctx *gin.Context, user User) error {
 		INSERT INTO users.users (username, email, password)
 		VALUES ($1, $2, $3)
 	`
-	_, err := r.db.ExecContext(ctx, query, user.Username, user.Email, user.Password)
+	_, err := r.pool.Exec(ctx, query, user.Username, user.Email, user.Password)
 	return err
 }
 
@@ -104,7 +102,7 @@ func (r *repository) GetUserByID(ctx *gin.Context, id string) (*User, error) {
 		WHERE id = $1
 	`
 	var user User
-	err := r.db.QueryRowContext(ctx, query, id).Scan(&user.ID, &user.Username, &user.Email, &user.Password)
+	err := r.pool.QueryRow(ctx, query, id).Scan(&user.ID, &user.Username, &user.Email, &user.Password)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -121,7 +119,7 @@ func (r *repository) GetUserByUsername(ctx *gin.Context, username string) (*User
 		WHERE username = $1
 	`
 	var user User
-	err := r.db.QueryRowContext(ctx, query, username).Scan(&user.ID, &user.Username, &user.Email, &user.Password)
+	err := r.pool.QueryRow(ctx, query, username).Scan(&user.ID, &user.Username, &user.Email, &user.Password)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -138,7 +136,7 @@ func (r *repository) GetUserByEmail(ctx *gin.Context, email string) (*User, erro
 		WHERE email = $1
 	`
 	var user User
-	err := r.db.QueryRowContext(ctx, query, email).Scan(&user.ID, &user.Username, &user.Email, &user.Password)
+	err := r.pool.QueryRow(ctx, query, email).Scan(&user.ID, &user.Username, &user.Email, &user.Password)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -154,7 +152,7 @@ func (r *repository) UpdateUser(ctx *gin.Context, user User) error {
 		SET username = $1, email = $2, password = $3
 		WHERE id = $4
 	`
-	_, err := r.db.ExecContext(ctx, query, user.Username, user.Email, user.Password, user.ID)
+	_, err := r.pool.Exec(ctx, query, user.Username, user.Email, user.Password, user.ID)
 	return err
 }
 
@@ -163,7 +161,7 @@ func (r *repository) DeleteUser(ctx *gin.Context, id string) error {
 		DELETE FROM users.users
 		WHERE id = $1
 	`
-	_, err := r.db.ExecContext(ctx, query, id)
+	_, err := r.pool.Exec(ctx, query, id)
 	return err
 }
 
@@ -172,20 +170,16 @@ func (r *repository) ListUsers(ctx *gin.Context) ([]User, error) {
 		SELECT id, username, email, password
 		FROM users.users
 	`
-	rows, err := r.db.QueryContext(ctx, query)
+	rows, err := r.pool.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
-	defer func(rows *sql.Rows) {
-		err := rows.Close()
-		if err != nil {
-			r.logger.Error("failed to close rows", zap.Error(err))
-		}
-	}(rows)
+	defer rows.Close() // ensure rows are closed
 
 	var users []User
 	for rows.Next() {
 		var user User
+		// Scan the row into the user struct fields
 		if err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.Password); err != nil {
 			return nil, err
 		}

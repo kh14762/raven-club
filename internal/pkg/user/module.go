@@ -10,6 +10,6 @@ var Module = fx.Module("User",
 		NewRepository,
 	),
 	fx.Invoke(func(lc fx.Lifecycle, r Repository) {
-		r.Hook(lc)
+		r.NewConnection(lc)
 	}),
 )

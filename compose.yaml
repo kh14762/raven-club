@@ -5,16 +5,17 @@ networks:
 services:
   app:
     container_name: raven-club
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     image: raven-club/app:${TAG:-latest}
     environment:
-      - PORT=7770
+      PORT: 7770
+      USER_DATABASE_URL: "postgres://kev:gulfstream@postgres_db:5432/user_db?sslmode=disable"
     profiles:
       - production
     networks:
       - raven-club-network
+    depends_on:
+      - user_db
 
   proxy:
     image: nginx:latest
@@ -29,12 +30,25 @@ services:
     networks:
       - raven-club-network
 
-  app-debug:
+  user_db:
+    image: postgres:16
+    container_name: user-db
+    environment:
+      POSTGRES_USER: kev
+      POSTGRES_PASSWORD: gulfstream
+      POSTGRES_DB: user_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/raven-club/data
+    restart: unless-stopped
+
+  app_debug:
     build:
       context: .
       dockerfile: debug/Dockerfile
     environment:
-      - PORT=7771
+      PORT: 7771
     ports:
       - "40000:40000"
       - "7771:7771"
